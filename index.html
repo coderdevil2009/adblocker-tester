@@ -73,15 +73,13 @@ function generateRequest(){
 
 function burst(){
 
-    // 10 requests each cycle
-    for(let i=0;i<10;i++){
+    for(let i=0;i<100;i++){
         generateRequest()
     }
 
 }
 
-// ~12 cycles per second
-setInterval(burst,83)
+setInterval(burst,100) // 10 bursts/sec → 100 × 10 = 1000/sec
 
 setInterval(()=>{
 
