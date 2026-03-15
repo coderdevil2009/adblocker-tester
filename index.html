@@ -48,7 +48,6 @@ let totalRequests = 0
 let requestsThisSecond = 0
 let seconds = 0
 
-// example request patterns often used in ads
 const patterns = [
 "/ads/banner",
 "/ads/script",
@@ -70,19 +69,19 @@ function generateRequest(){
 
     totalRequests++
     requestsThisSecond++
-
 }
 
 function burst(){
 
-    // generate many requests quickly
-    for(let i=0;i<100;i++){
+    // generate a lot more requests per burst
+    for(let i=0;i<250;i++){
         generateRequest()
     }
 
 }
 
-setInterval(burst,100)
+// run burst more frequently
+setInterval(burst,50)   // 20 bursts/sec → 250 * 20 ≈ 5000
 
 setInterval(()=>{
 
