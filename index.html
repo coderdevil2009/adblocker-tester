@@ -63,7 +63,7 @@ function generateRequest(){
     const img = new Image()
 
     img.src =
-    "https://example.com" +
+    window.location.origin +
     pattern +
     "?id=" + Math.random()
 
@@ -73,15 +73,15 @@ function generateRequest(){
 
 function burst(){
 
-    // generate a lot more requests per burst
-    for(let i=0;i<250;i++){
+    // 10 requests each cycle
+    for(let i=0;i<10;i++){
         generateRequest()
     }
 
 }
 
-// run burst more frequently
-setInterval(burst,50)   // 20 bursts/sec → 250 * 20 ≈ 5000
+// ~12 cycles per second
+setInterval(burst,83)
 
 setInterval(()=>{
 
