@@ -3,7 +3,11 @@
 <head>
 <meta charset="UTF-8">
 <title>Adblock Stress Test</title>
-
+<div style="margin-top:20px;">
+<label>Ads per second:</label>
+<input type="number" id="rateInput" value="1000" min="1" max="20000">
+<button onclick="setRate()">Set</button>
+</div>
 <style>
 body{
     font-family: Arial, sans-serif;
@@ -48,6 +52,10 @@ let totalRequests = 0
 let requestsThisSecond = 0
 let seconds = 0
 
+let targetRate = 1000
+let burstInterval = null
+const intervalMs = 100
+
 const patterns = [
 "/ads/banner",
 "/ads/script",
@@ -71,15 +79,36 @@ function generateRequest(){
     requestsThisSecond++
 }
 
-function burst(){
+function startGenerator(){
 
-    for(let i=0;i<100;i++){
-        generateRequest()
+    if(burstInterval){
+        clearInterval(burstInterval)
     }
+
+    const burstsPerSecond = 1000 / intervalMs
+    const requestsPerBurst = Math.floor(targetRate / burstsPerSecond)
+
+    burstInterval = setInterval(()=>{
+
+        for(let i=0;i<requestsPerBurst;i++){
+            generateRequest()
+        }
+
+    }, intervalMs)
 
 }
 
-setInterval(burst,100) // 10 bursts/sec → 100 × 10 = 1000/sec
+function setRate(){
+
+    const input = document.getElementById("rateInput").value
+
+    targetRate = parseInt(input)
+
+    startGenerator()
+
+}
+
+startGenerator()
 
 setInterval(()=>{
 
