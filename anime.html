@@ -1,0 +1,135 @@
+<html lang="en"><head>
+    <title>Anime Embedder (VidSrc Proxy)</title>
+    <style>
+        body { font-family: 'Segoe UI', sans-serif; background: #0a0a0a; color: #00ff00; margin: 0; padding: 20px; }
+        .container { max-width: 1200px; margin: 0 auto; }
+        h1 { text-align: center; color: #fff; text-shadow: 0 0 10px #00ff00; }
+        .form-group { margin: 20px 0; }
+        label { display: block; font-size: 18px; margin-bottom: 10px; }
+        input, select { width: 100%; padding: 12px; font-size: 16px; background: #1a1a1a; border: 1px solid #00ff00; color: #00ff00; box-sizing: border-box; }
+        button { width: 100%; padding: 15px; font-size: 18px; background: #00ff00; color: #000; border: none; cursor: pointer; font-weight: bold; transition: background 0.3s; }
+        button:hover { background: #00cc00; }
+        #player { width: 100%; height: 500px; margin-top: 20px; border: 2px solid #00ff00; background: #000; }
+        #status { padding: 10px; margin: 10px 0; border-radius: 5px; }
+        .success { background: #004400; color: #00ff00; }
+        .error { background: #440000; color: #ff0000; }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>🍥 Anime Embedder (VidSrc Flux)</h1>
+        <p style="text-align: center; color: #ccc;">Enter anime name → Get TMDB/IMDB ID → Fill S/E + Sub/Dub → Embed streams direct.</p>
+        
+        <div class="form-group">
+            <label>1. Anime Name (AniDB/TMDB Search):</label>
+            <input type="text" id="animeName" placeholder="e.g. One Piece, Attack on Titan" value="One Piece">
+            <button onclick="searchAnime()">Search TMDB ID</button>
+            <div id="idResult"></div>
+        </div>
+        
+        <div class="form-group">
+            <label>2. ID (TMDB/IMDB auto-filled):</label>
+            <select id="idType">
+                <option value="tmdb">TMDB (e.g. 1399)</option>
+                <option value="imdb">IMDB (e.g. tt0944947)</option>
+            </select>
+            <input type="text" id="showId" placeholder="Auto-filled from search">
+        </div>
+        
+        <div class="form-group">
+            <label>3. Season:</label>
+            <input type="number" id="season" min="1" value="1">
+        </div>
+        
+        <div class="form-group">
+            <label>4. Episode:</label>
+            <input type="number" id="episode" min="1" value="1">
+        </div>
+        
+        <div class="form-group">
+            <label>5. Version:</label>
+            <select id="version">
+                <option value="sub">SUB</option>
+                <option value="dub">DUB</option>
+            </select>
+        </div>
+        
+        <button onclick="generateEmbed()">🔥 Generate &amp; Play</button>
+        
+        <div id="status"></div>
+        <iframe id="player" style="display: none;"></iframe>
+    </div>
+
+    <script>
+        const VIDSRCS = [
+            'https://vidsrc-embed.ru/embed/tv',
+            'https://vidsrc.me/embed/tv',  // Backup mirrors
+            'https://vidsrc.fm/embed/tv'
+        ];
+        let currentMirror = 0;
+
+        async function searchAnime() {
+            const name = document.getElementById('animeName').value.trim();
+            if (!name) return showStatus('Enter anime name', 'error');
+            
+            showStatus('Searching TMDB...', 'success');
+            try {
+                const res = await fetch(`https://api.themoviedb.org/3/search/tv?api_key=3fd2be6f0c70a2a598f084ddfb75487c&query=${encodeURIComponent(name)}&language=en-US`);
+                const data = await res.json();
+                if (data.results && data.results[0]) {
+                    const show = data.results[0];
+                    document.getElementById('showId').value = show.id;  // TMDB default
+                    document.getElementById('idType').value = 'tmdb';
+                    showStatus(`Found: ${show.name} (TMDB: ${show.id})`, 'success');
+                } else {
+                    showStatus('No match—try exact name', 'error');
+                }
+            } catch (e) {
+                showStatus('Search failed—manual ID ok', 'error');
+            }
+        }
+
+        function generateEmbed() {
+            const idType = document.getElementById('idType').value;
+            const showId = document.getElementById('showId').value.trim();
+            const season = document.getElementById('season').value;
+            const episode = document.getElementById('episode').value;
+            const version = document.getElementById('version').value.toLowerCase();
+            
+            if (!showId || !season || !episode) {
+                return showStatus('Fill ID, Season, Episode', 'error');
+            }
+            
+            // Version tweak: VidSrc doesn't filter sub/dub—embed handles it; optional sub_url for dubs
+            const params = new URLSearchParams({
+                [idType]: showId,
+                season: season,
+                episode: episode,
+                autoplay: 1,
+                autonext: 1,
+                ds_lang: version === 'dub' ? 'en' : 'ja'  // Hack for dub preference
+            });
+            
+            const url = `${VIDSRCS[currentMirror]}?${params}`;
+            document.getElementById('player').src = url;
+            document.getElementById('player').style.display = 'block';
+            showStatus(`Embedded: S${season}E${episode} ${version.toUpperCase()} via ${VIDSRCS[currentMirror]} | <a href="${url}" target="_blank">Direct</a>`, 'success');
+            
+            // Flux next time
+            currentMirror = (currentMirror + 1) % VIDSRCS.length;
+        }
+        
+        function showStatus(msg, type) {
+            const el = document.getElementById('status');
+            el.innerHTML = msg;
+            el.className = type;
+        }
+        
+        // Hotkeys: Enter on inputs → generate
+        document.addEventListener('keypress', (e) => {
+            if (e.key === 'Enter') generateEmbed();
+        });
+    </script>
+
+
+</body></html>
