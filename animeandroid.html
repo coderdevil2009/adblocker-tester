@@ -2,12 +2,12 @@
 <html lang="en">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
-    <title>XAnimeX Mobile</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>XAnimeX</title>
     <style>
         * {
-            box-sizing: border-box;
             -webkit-tap-highlight-color: transparent;
+            box-sizing: border-box;
         }
         html, body {
             margin: 0;
@@ -17,7 +17,6 @@
             color: #00ff00;
             width: 100%;
             min-height: 100vh;
-            -webkit-text-size-adjust: 100%;
         }
         body { padding: 12px; }
         .container { max-width: 600px; margin: 0 auto; width: 100%; }
@@ -36,7 +35,6 @@
             font-size: 12px;
             color: #888;
             margin-bottom: 6px;
-            letter-spacing: 0.5px;
         }
         
         input, select {
@@ -53,7 +51,7 @@
             border-color: #00ff00;
         }
         
-        /* BUTTONS - NO onclick attributes, all JS-bound */
+        /* CRITICAL: touch-action forces immediate touch response */
         .btn {
             display: inline-flex;
             align-items: center;
@@ -70,11 +68,7 @@
             touch-action: manipulation;
             user-select: none;
             -webkit-user-select: none;
-            transition: background 0.15s, opacity 0.15s;
             min-height: 48px;
-        }
-        .btn:active {
-            opacity: 0.7;
         }
         
         .btn-primary {
@@ -145,7 +139,6 @@
         #searchResult .title { color: #fff; font-size: 15px; font-weight: bold; }
         #searchResult .meta { color: #888; font-size: 12px; margin-top: 4px; }
         #searchResult .meta span { color: #00ff00; }
-        #searchResult .btn { margin-top: 10px; }
         
         #playerWrap {
             display: none;
@@ -163,7 +156,6 @@
             display: block;
         }
         @media (min-width: 600px) { #player { height: 400px; } }
-        @media (orientation: landscape) and (max-height: 500px) { #player { height: calc(100vh - 180px); } }
         
         .p-controls {
             display: flex;
@@ -172,7 +164,6 @@
             background: #111;
             border-top: 1px solid #222;
         }
-        .p-controls .btn { min-height: 38px; padding: 8px; font-size: 12px; }
         .p-info {
             text-align: center;
             font-size: 11px;
@@ -189,9 +180,7 @@
         .id-row select { flex: 0 0 80px; }
         .id-row input { flex: 1; }
         
-        .hidden { display: none !important; }
         .mt-8 { margin-top: 8px; }
-        
         .footer {
             text-align: center;
             color: #333;
@@ -199,26 +188,12 @@
             margin-top: 20px;
             padding: 10px;
         }
-        .spinner {
-            display: inline-block;
-            width: 16px;
-            height: 16px;
-            border: 2px solid #333;
-            border-top-color: #00ff00;
-            border-radius: 50%;
-            animation: spin 0.7s linear infinite;
-            vertical-align: middle;
-            margin-right: 6px;
-        }
-        @keyframes spin { to { transform: rotate(360deg); } }
-        
-        a { color: #00ccff; }
     </style>
 </head>
 <body>
     <div class="container">
         <h1>🍥 XAnimeX</h1>
-        <p class="sub">TMDB → Embed → Stream • Mobile Edition</p>
+        <p class="sub">TMDB → Embed → Stream</p>
 
         <!-- Step 1: Search -->
         <div class="card">
@@ -266,8 +241,8 @@
         <div class="card">
             <label>4. Audio</label>
             <div class="row" id="versionGroup">
-                <button class="btn btn-primary active" id="btnSub" data-version="sub">SUB</button>
-                <button class="btn btn-secondary" id="btnDub" data-version="dub">DUB</button>
+                <button class="btn btn-primary active" id="btnSub">SUB</button>
+                <button class="btn btn-secondary" id="btnDub">DUB</button>
             </div>
         </div>
 
@@ -288,22 +263,15 @@
             </div>
         </div>
 
-        <div class="footer">XAnimeX v2.1 • Mobile Optimized</div>
+        <div class="footer">XAnimeX v2.1 • Mobile</div>
     </div>
 
     <script>
         (function() {
             'use strict';
 
-            // =====================================================
-            // CONFIG
-            // =====================================================
+            // === CONFIG ===
             var TMDB_KEY = '3fd2be6f0c70a2a598f084ddfb75487c';
-            // Fallback key from freekeys repo if main one is dead
-            var TMDB_KEY_FALLBACK = 'e547e17d4e91f3e62a571655cd1ccaff';
-            // Bearer token fallback (more reliable than query param)
-            var TMDB_BEARER = 'eyJhbGciOiJIUzI1NiJ9.eyJhdWQiOiIzZmQyYmU2ZjBjNzBhMmE1OThmMDg0ZGRmYjc1NDg3YyIsInN1YiI6IjY2MDU1YzI3YjUzMjYzMDE2NDVkZTY1MiIsInNjb3BlcyI6WyJhcGlfcmVhZCJdLCJ2ZXJzaW9uIjoxfQ.lU9O4X-lC3g7Jp_zq5n60jTLfcdBGvS66Rcf0COAFcI';
-
             var MIRRORS = [
                 { name: 'vidsrc-embed.su', url: 'https://vidsrc-embed.su/embed/tv' },
                 { name: 'vidsrcme.ru',     url: 'https://vidsrcme.ru/embed/tv' },
@@ -314,13 +282,9 @@
             var currentMirror = 0;
             var currentVersion = 'sub';
             var lastSearchData = null;
-            var isLoading = false;
 
-            // =====================================================
-            // DOM REFS
-            // =====================================================
+            // === DOM ===
             var $ = function(id) { return document.getElementById(id); };
-
             var animeName      = $('animeName');
             var btnSearch      = $('btnSearch');
             var searchResult   = $('searchResult');
@@ -344,160 +308,63 @@
             var btnSwitch      = $('btnSwitch');
             var btnClose       = $('btnClose');
 
-            // =====================================================
-            // UTILITY
-            // =====================================================
+            // === THE FIX: bind both touchstart AND click ===
+            function tap(el, fn) {
+                if (!el) return;
+                // touchstart fires IMMEDIATELY on Android, no 300ms delay
+                el.addEventListener('touchstart', function(e) {
+                    e.preventDefault(); // prevents ghost click issues
+                    fn(e);
+                }, { passive: false });
+                // click as fallback for desktop / non-touch
+                el.addEventListener('click', function(e) {
+                    fn(e);
+                });
+            }
+
+            // === Status ===
             function showStatus(msg, type) {
                 status.textContent = msg;
                 status.className = 's-' + type;
                 status.style.display = 'block';
             }
-
             function hideStatus() {
                 status.style.display = 'none';
             }
 
-            function setSearchStatus(msg) {
-                searchStatus.textContent = msg;
-            }
-
-            // =====================================================
-            // EVENT BINDING (NO onclick attributes!)
-            // =====================================================
-            function bind(el, event, fn) {
-                if (!el) return;
-                el.addEventListener(event, fn, false);
-                // Also bind touchend for Android reliability
-                if (event === 'click') {
-                    el.addEventListener('touchend', function(e) {
-                        // Don't fire twice
-                        if (e.changedTouches && e.changedTouches.length > 0) {
-                            // Let click handle it, but ensure it fires
-                        }
-                    }, { passive: true });
-                }
-            }
-
-            // =====================================================
-            // VERSION TOGGLE
-            // =====================================================
-            function setVersion(v) {
-                currentVersion = v;
-                if (v === 'sub') {
-                    btnSub.className = 'btn btn-primary active';
-                    btnDub.className = 'btn btn-secondary';
-                } else {
-                    btnSub.className = 'btn btn-secondary';
-                    btnDub.className = 'btn btn-primary active';
-                }
-            }
-
-            bind(btnSub, 'click', function(e) {
-                e.preventDefault();
-                setVersion('sub');
-            });
-            bind(btnDub, 'click', function(e) {
-                e.preventDefault();
-                setVersion('dub');
-            });
-
-            // =====================================================
-            // TMDB SEARCH
-            // =====================================================
+            // === Search ===
             function searchAnime() {
                 var name = animeName.value.trim();
-                if (!name) {
-                    showStatus('Enter an anime name first', 'error');
-                    return;
-                }
-                if (isLoading) return;
-                isLoading = true;
-
-                showStatus('🔍 Searching...', 'info');
+                if (!name) { showStatus('Enter a name', 'error'); return; }
+                showStatus('Searching...', 'info');
                 searchResult.classList.remove('show');
-                setSearchStatus('Searching TMDB...');
+                searchStatus.textContent = 'Searching...';
 
-                // Try with Bearer token first (more reliable than query param key)
-                var url = 'https://api.themoviedb.org/3/search/tv?query=' + encodeURIComponent(name) + '&language=en-US&page=1';
-
-                fetch(url, {
-                    method: 'GET',
-                    headers: {
-                        'Accept': 'application/json',
-                        'Authorization': 'Bearer ' + TMDB_BEARER
-                    }
-                })
-                .then(function(res) {
-                    if (!res.ok) {
-                        // Try fallback with api_key query param
-                        throw new Error('Bearer failed, trying key');
-                    }
-                    return res.json();
-                })
-                .catch(function() {
-                    // Fallback: try with api_key query param
-                    return fetch(url + '&api_key=' + TMDB_KEY_FALLBACK, {
-                        method: 'GET',
-                        headers: { 'Accept': 'application/json' }
-                    }).then(function(res) {
-                        if (!res.ok) throw new Error('All auth methods failed');
-                        return res.json();
+                var url = 'https://api.themoviedb.org/3/search/tv?api_key=' + TMDB_KEY + '&query=' + encodeURIComponent(name) + '&language=en-US&page=1';
+                fetch(url)
+                    .then(function(r) { return r.json(); })
+                    .then(function(data) {
+                        if (data.results && data.results.length > 0) {
+                            var show = data.results[0];
+                            lastSearchData = show;
+                            resultTitle.textContent = show.name || 'Unknown';
+                            var year = show.first_air_date ? show.first_air_date.substring(0, 4) : 'N/A';
+                            resultMeta.innerHTML = 'TMDB: <span>' + show.id + '</span> | Year: <span>' + year + '</span>';
+                            searchResult.classList.add('show');
+                            showStatus('Found: ' + show.name, 'success');
+                            searchStatus.textContent = '';
+                        } else {
+                            showStatus('No results', 'error');
+                            searchStatus.textContent = 'No matches';
+                        }
+                    })
+                    .catch(function() {
+                        showStatus('TMDB search failed. Use manual ID.', 'error');
+                        searchStatus.textContent = 'Search error';
                     });
-                })
-                .then(function(data) {
-                    isLoading = false;
-                    if (data.results && data.results.length > 0) {
-                        var show = data.results[0];
-                        lastSearchData = show;
-                        resultTitle.textContent = show.name || 'Unknown';
-                        var year = show.first_air_date ? show.first_air_date.substring(0, 4) : 'N/A';
-                        var overview = show.overview ? show.overview.substring(0, 120) + '...' : 'No description';
-                        resultMeta.innerHTML = 'TMDB: <span>' + show.id + '</span> | Year: <span>' + year + '</span><br><small>' + overview + '</small>';
-                        searchResult.classList.add('show');
-                        showStatus('✅ Found: ' + show.name, 'success');
-                        setSearchStatus('');
-                    } else {
-                        showStatus('❌ No results. Try manual ID entry.', 'error');
-                        setSearchStatus('No matches found');
-                    }
-                })
-                .catch(function(err) {
-                    isLoading = false;
-                    console.error('TMDB error:', err);
-                    showStatus('⚠️ Search failed. Enter ID manually.', 'error');
-                    setSearchStatus('TMDB unreachable on this network');
-                });
             }
 
-            bind(btnSearch, 'click', function(e) {
-                e.preventDefault();
-                searchAnime();
-            });
-
-            bind(btnApplyResult, 'click', function(e) {
-                e.preventDefault();
-                if (!lastSearchData) return;
-                showId.value = lastSearchData.id;
-                idType.value = 'tmdb';
-                searchResult.classList.remove('show');
-                showStatus('✅ Applied: ' + lastSearchData.name + ' (TMDB: ' + lastSearchData.id + ')', 'success');
-                lastSearchData = null;
-                setSearchStatus('');
-            });
-
-            // =====================================================
-            // AUTO-DETECT IMDB ID
-            // =====================================================
-            bind(showId, 'blur', function() {
-                var val = showId.value.trim();
-                if (val.match(/^tt\d+/i)) {
-                    idType.value = 'imdb';
-                }
-            });
-
-            // =====================================================
-            // GENERATE EMBED
-            // =====================================================
+            // === Generate ===
             function generateEmbed() {
                 var tid = idType.value;
                 var sid = showId.value.trim();
@@ -505,130 +372,104 @@
                 var e = parseInt(episode.value) || 1;
                 var ver = currentVersion;
 
-                if (!sid) {
-                    showStatus('❌ Enter a TMDB or IMDB ID', 'error');
-                    return;
-                }
+                if (!sid) { showStatus('Enter an ID', 'error'); return; }
+                if (sid.match(/^tt\d+/i)) { idType.value = 'imdb'; tid = 'imdb'; }
 
-                // Auto-detect IMDB
-                if (sid.match(/^tt\d+/i)) {
-                    idType.value = 'imdb';
-                    tid = 'imdb';
-                }
-
-                showStatus('⏳ Loading S' + s + 'E' + e + ' (' + ver.toUpperCase() + ')...', 'info');
+                showStatus('Loading S' + s + 'E' + e + ' ' + ver.toUpperCase(), 'info');
                 loadMirror(tid, sid, s, e, ver, 0);
             }
 
-            bind(btnGenerate, 'click', function(e) {
-                e.preventDefault();
-                generateEmbed();
-            });
-
-            // =====================================================
-            // MIRROR LOADING
-            // =====================================================
             function loadMirror(tid, sid, s, e, ver, idx) {
                 if (idx >= MIRRORS.length) {
-                    showStatus('❌ All mirrors failed. Try another ID.', 'error');
+                    showStatus('All mirrors failed', 'error');
                     return;
                 }
-
                 currentMirror = idx;
                 var mirror = MIRRORS[idx];
-
                 var params = new URLSearchParams();
                 params.set(tid, sid);
                 params.set('season', s);
                 params.set('episode', e);
-                params.set('autonext', '1');
                 params.set('ds_lang', ver === 'dub' ? 'en' : 'ja');
-
                 var url = mirror.url + '?' + params.toString();
                 player.src = url;
                 playerWrap.style.display = 'block';
-
                 mirrorLabel.textContent = (idx + 1) + '/' + MIRRORS.length;
                 mirrorName.textContent = mirror.name;
-
-                showStatus('▶️ S' + s + 'E' + e + ' ' + ver.toUpperCase() + ' · ' + mirror.name, 'success');
-
-                // Try postMessage play
-                setTimeout(function() {
-                    try {
-                        player.contentWindow.postMessage({ type: 'play' }, '*');
-                    } catch(_) {}
-                }, 2000);
+                showStatus('▶ ' + mirror.name, 'success');
             }
 
-            bind(btnReload, 'click', function(e) {
-                e.preventDefault();
+            // === BIND ALL BUTTONS (touchstart + click) ===
+
+            // Search
+            tap(btnSearch, function() { searchAnime(); });
+
+            // Apply search result
+            tap(btnApplyResult, function() {
+                if (!lastSearchData) return;
+                showId.value = lastSearchData.id;
+                idType.value = 'tmdb';
+                searchResult.classList.remove('show');
+                showStatus('Applied TMDB: ' + lastSearchData.id, 'success');
+                lastSearchData = null;
+            });
+
+            // Version: SUB
+            tap(btnSub, function() {
+                currentVersion = 'sub';
+                btnSub.className = 'btn btn-primary active';
+                btnDub.className = 'btn btn-secondary';
+            });
+
+            // Version: DUB
+            tap(btnDub, function() {
+                currentVersion = 'dub';
+                btnDub.className = 'btn btn-primary active';
+                btnSub.className = 'btn btn-secondary';
+            });
+
+            // Generate
+            tap(btnGenerate, function() { generateEmbed(); });
+
+            // Reload
+            tap(btnReload, function() {
                 var src = player.src;
                 if (!src) return;
                 player.src = '';
-                setTimeout(function() {
-                    player.src = src;
-                    showStatus('🔄 Reloaded', 'info');
-                }, 300);
+                setTimeout(function() { player.src = src; }, 300);
+                showStatus('Reloaded', 'info');
             });
 
-            bind(btnSwitch, 'click', function(e) {
-                e.preventDefault();
+            // Switch mirror
+            tap(btnSwitch, function() {
                 var tid = idType.value;
                 var sid = showId.value.trim();
                 var s = season.value;
                 var e = episode.value;
                 var ver = currentVersion;
                 var next = (currentMirror + 1) % MIRRORS.length;
-                showStatus('⏳ Switching to ' + MIRRORS[next].name + '...', 'info');
                 loadMirror(tid, sid, s, e, ver, next);
             });
 
-            bind(btnClose, 'click', function(e) {
-                e.preventDefault();
+            // Close player
+            tap(btnClose, function() {
                 player.src = '';
                 playerWrap.style.display = 'none';
-                showStatus('🛑 Player closed', 'info');
-                setTimeout(hideStatus, 2000);
+                showStatus('Closed', 'info');
+                setTimeout(hideStatus, 1500);
             });
 
-            // =====================================================
-            // ENTER KEY SUPPORT
-            // =====================================================
+            // Enter key
             document.addEventListener('keydown', function(e) {
                 if (e.key === 'Enter') {
                     var active = document.activeElement;
-                    if (active === animeName) {
-                        e.preventDefault();
-                        searchAnime();
-                    } else if (active === showId || active === season || active === episode) {
-                        e.preventDefault();
-                        generateEmbed();
-                    }
+                    if (active === animeName) { e.preventDefault(); searchAnime(); }
+                    else if (active === showId || active === season || active === episode) { e.preventDefault(); generateEmbed(); }
                 }
             });
 
-            // =====================================================
-            // ANDROID BACK BUTTON
-            // =====================================================
-            window.addEventListener('popstate', function() {
-                if (playerWrap.style.display !== 'none') {
-                    player.src = '';
-                    playerWrap.style.display = 'none';
-                }
-            });
-
-            // =====================================================
-            // INIT
-            // =====================================================
-            // Auto-search on load
-            setTimeout(function() {
-                searchAnime();
-            }, 800);
-
-            console.log('🍥 XAnimeX Mobile v2.1');
-            console.log('Viewport:', window.innerWidth + 'x' + window.innerHeight);
-            console.log('User-Agent:', navigator.userAgent);
+            // Auto-search
+            setTimeout(searchAnime, 500);
 
         })();
     </script>
