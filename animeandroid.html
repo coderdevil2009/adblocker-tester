@@ -1,0 +1,603 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>XAnimeX Mobile</title>
+    <style>
+        * {
+            box-sizing: border-box;
+            -webkit-tap-highlight-color: transparent;
+        }
+        body {
+            font-family: 'Segoe UI', system-ui, -apple-system, sans-serif;
+            background: #0a0a0a;
+            color: #00ff00;
+            margin: 0;
+            padding: 12px;
+            min-height: 100vh;
+            overflow-x: hidden;
+        }
+        .container {
+            max-width: 100%;
+            margin: 0 auto;
+        }
+        h1 {
+            text-align: center;
+            color: #fff;
+            text-shadow: 0 0 10px #00ff00;
+            font-size: 24px;
+            margin: 10px 0;
+        }
+        .subtitle {
+            text-align: center;
+            color: #888;
+            font-size: 13px;
+            margin: 0 0 16px 0;
+        }
+        .card {
+            background: #111;
+            border: 1px solid #222;
+            border-radius: 12px;
+            padding: 16px;
+            margin-bottom: 12px;
+        }
+        .card-label {
+            font-size: 13px;
+            color: #aaa;
+            margin-bottom: 6px;
+            display: block;
+        }
+        input, select {
+            width: 100%;
+            padding: 14px;
+            font-size: 16px; /* Prevents iOS zoom on focus */
+            background: #1a1a1a;
+            border: 1px solid #333;
+            color: #00ff00;
+            border-radius: 8px;
+            outline: none;
+            transition: border 0.2s;
+        }
+        input:focus, select:focus {
+            border-color: #00ff00;
+        }
+        .btn {
+            width: 100%;
+            padding: 16px;
+            font-size: 17px;
+            font-weight: bold;
+            border: none;
+            border-radius: 10px;
+            cursor: pointer;
+            transition: opacity 0.2s, transform 0.1s;
+            -webkit-appearance: none;
+            appearance: none;
+        }
+        .btn:active {
+            transform: scale(0.98);
+        }
+        .btn-primary {
+            background: #00ff00;
+            color: #000;
+        }
+        .btn-primary:active {
+            background: #00cc00;
+        }
+        .btn-secondary {
+            background: #1a1a1a;
+            color: #00ff00;
+            border: 1px solid #333;
+        }
+        .btn-secondary:active {
+            background: #222;
+        }
+        .btn-danger {
+            background: #440000;
+            color: #ff4444;
+        }
+        .btn-group {
+            display: flex;
+            gap: 8px;
+            margin-top: 8px;
+        }
+        .btn-group .btn {
+            flex: 1;
+        }
+        #status {
+            padding: 12px;
+            margin: 8px 0;
+            border-radius: 8px;
+            font-size: 14px;
+            text-align: center;
+            display: none;
+        }
+        .status-success {
+            display: block !important;
+            background: #004400;
+            color: #00ff00;
+        }
+        .status-error {
+            display: block !important;
+            background: #440000;
+            color: #ff4444;
+        }
+        .status-info {
+            display: block !important;
+            background: #003344;
+            color: #00ccff;
+        }
+        #player-wrapper {
+            position: relative;
+            width: 100%;
+            margin-top: 12px;
+            border-radius: 10px;
+            overflow: hidden;
+            background: #000;
+            display: none;
+            border: 1px solid #333;
+        }
+        #player {
+            width: 100%;
+            height: 260px;
+            border: none;
+            background: #000;
+        }
+        /* Landscape: make player taller */
+        @media (min-width: 600px) {
+            #player { height: 400px; }
+        }
+        @media (orientation: landscape) and (max-height: 500px) {
+            #player { height: calc(100vh - 200px); }
+        }
+        .player-controls {
+            display: flex;
+            gap: 8px;
+            padding: 10px;
+            background: #111;
+            border-top: 1px solid #222;
+            flex-wrap: wrap;
+        }
+        .player-controls .btn {
+            flex: 1;
+            padding: 10px;
+            font-size: 13px;
+            min-width: 60px;
+        }
+        .mirror-indicator {
+            text-align: center;
+            font-size: 12px;
+            color: #666;
+            padding: 6px;
+        }
+        .mirror-indicator span {
+            color: #00ff00;
+        }
+        .id-display {
+            display: flex;
+            gap: 8px;
+            align-items: center;
+        }
+        .id-display input {
+            flex: 1;
+        }
+        .id-display select {
+            width: auto;
+            min-width: 70px;
+            flex-shrink: 0;
+        }
+        .row {
+            display: flex;
+            gap: 8px;
+        }
+        .row > * {
+            flex: 1;
+        }
+        .search-result {
+            background: #0d1a0d;
+            border: 1px solid #004400;
+            border-radius: 8px;
+            padding: 12px;
+            margin-top: 8px;
+            display: none;
+        }
+        .search-result.active {
+            display: block;
+        }
+        .search-result .title {
+            color: #fff;
+            font-size: 16px;
+            font-weight: bold;
+        }
+        .search-result .meta {
+            color: #888;
+            font-size: 13px;
+            margin-top: 4px;
+        }
+        .search-result .meta span {
+            color: #00ff00;
+        }
+        /* Loading spinner */
+        .spinner {
+            display: inline-block;
+            width: 20px;
+            height: 20px;
+            border: 2px solid #333;
+            border-top-color: #00ff00;
+            border-radius: 50%;
+            animation: spin 0.8s linear infinite;
+            vertical-align: middle;
+            margin-right: 8px;
+        }
+        @keyframes spin {
+            to { transform: rotate(360deg); }
+        }
+        .hidden { display: none !important; }
+        a { color: #00ccff; }
+        .footer {
+            text-align: center;
+            color: #444;
+            font-size: 12px;
+            margin-top: 20px;
+            padding: 10px;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>🍥 XAnimeX</h1>
+        <p class="subtitle">TMDB → Embed → Stream</p>
+
+        <!-- Step 1: Search -->
+        <div class="card">
+            <label class="card-label">1. Search Anime (TMDB)</label>
+            <div style="display:flex;gap:8px;">
+                <input type="text" id="animeName" placeholder="e.g. One Piece, Attack on Titan" value="One Piece" style="flex:1;">
+                <button class="btn btn-secondary" onclick="searchAnime()" style="flex:0;padding:14px 20px;width:auto;">🔍</button>
+            </div>
+            <div class="search-result" id="searchResult">
+                <div class="title" id="resultTitle"></div>
+                <div class="meta" id="resultMeta"></div>
+                <button class="btn btn-primary" onclick="applySearchResult()" style="margin-top:10px;">✅ Use This</button>
+            </div>
+            <div id="searchStatus" style="margin-top:8px;font-size:13px;"></div>
+        </div>
+
+        <!-- Step 2: ID -->
+        <div class="card">
+            <label class="card-label">2. ID</label>
+            <div class="id-display">
+                <select id="idType">
+                    <option value="tmdb">TMDB</option>
+                    <option value="imdb">IMDB</option>
+                </select>
+                <input type="text" id="showId" placeholder="e.g. 1399 or tt0944947">
+            </div>
+        </div>
+
+        <!-- Step 3: Season + Episode -->
+        <div class="card">
+            <label class="card-label">3. Season &amp; Episode</label>
+            <div class="row">
+                <div>
+                    <label class="card-label" style="font-size:11px;margin-bottom:4px;">Season</label>
+                    <input type="number" id="season" min="1" value="1">
+                </div>
+                <div>
+                    <label class="card-label" style="font-size:11px;margin-bottom:4px;">Episode</label>
+                    <input type="number" id="episode" min="1" value="1">
+                </div>
+            </div>
+        </div>
+
+        <!-- Step 4: Version -->
+        <div class="card">
+            <label class="card-label">4. Audio</label>
+            <div class="row">
+                <button class="btn btn-primary" id="btnSub" onclick="setVersion('sub')" style="background:#00ff00;">SUB</button>
+                <button class="btn btn-secondary" id="btnDub" onclick="setVersion('dub')">DUB</button>
+            </div>
+        </div>
+
+        <!-- Generate Button -->
+        <button class="btn btn-primary" onclick="generateEmbed()">🔥 Generate &amp; Play</button>
+
+        <!-- Status -->
+        <div id="status"></div>
+
+        <!-- Player -->
+        <div id="player-wrapper">
+            <iframe id="player" allow="accelerometer; autoplay; encrypted-media; gyroscope; picture-in-picture" allowfullscreen referrerpolicy="origin"></iframe>
+            <div class="mirror-indicator">Mirror: <span id="mirrorLabel">1/4</span> &nbsp;|&nbsp; <span id="mirrorDomain">vidsrc-embed.ru</span></div>
+            <div class="player-controls">
+                <button class="btn btn-secondary" onclick="reloadEmbed()">🔄 Reload</button>
+                <button class="btn btn-secondary" onclick="switchMirror()">🔀 Switch Mirror</button>
+                <button class="btn btn-danger" onclick="closePlayer()">✕ Close</button>
+            </div>
+        </div>
+
+        <div class="footer">
+            XAnimeX v2.0 — Mobile Optimized
+        </div>
+    </div>
+
+    <script>
+        // ============================================================
+        // MOBILE-FRIENDLY VIDSRC EMBED PLAYER
+        // ============================================================
+
+        // --- Mirror Sources (verified working, mobile-friendly) ---
+        const VIDSRC_MIRRORS = [
+            {
+                name: 'VidSrc Embed',
+                url: 'https://vidsrc-embed.su/embed/tv',
+                params: {}
+            },
+            {
+                name: 'VidSrc Me',
+                url: 'https://vidsrcme.ru/embed/tv',
+                params: {}
+            },
+            {
+                name: 'VidSrc FM',
+                url: 'https://vidsrc.fm/embed/tv',
+                params: {}
+            },
+            {
+                name: 'VidSrc WTF',
+                url: 'https://vidsrc.wtf/embed/tv',
+                params: {}
+            }
+        ];
+
+        let currentMirrorIndex = 0;
+        let currentVersion = 'sub';
+        let lastGeneratedUrl = '';
+
+        // --- Version Toggle ---
+        function setVersion(v) {
+            currentVersion = v;
+            document.getElementById('btnSub').className = v === 'sub' ? 'btn btn-primary' : 'btn btn-secondary';
+            document.getElementById('btnSub').style.background = v === 'sub' ? '#00ff00' : '';
+            document.getElementById('btnDub').className = v === 'dub' ? 'btn btn-primary' : 'btn btn-secondary';
+            document.getElementById('btnDub').style.background = v === 'dub' ? '#00ff00' : '';
+        }
+
+        // --- TMDB Search ---
+        let lastSearchResult = null;
+
+        async function searchAnime() {
+            const name = document.getElementById('animeName').value.trim();
+            if (!name) {
+                showStatus('Please enter an anime name', 'error');
+                return;
+            }
+
+            showStatus('🔍 Searching TMDB...', 'info');
+            document.getElementById('searchResult').classList.remove('active');
+
+            // Try TMDB API v3 (public key)
+            const TMDB_KEY = '3fd2be6f0c70a2a598f084ddfb75487c';
+            const url = `https://api.themoviedb.org/3/search/tv?api_key=${TMDB_KEY}&query=${encodeURIComponent(name)}&language=en-US&page=1`;
+
+            try {
+                const response = await fetch(url, {
+                    method: 'GET',
+                    headers: { 'Accept': 'application/json' }
+                });
+
+                if (!response.ok) {
+                    throw new Error(`TMDB returned ${response.status}`);
+                }
+
+                const data = await response.json();
+
+                if (data.results && data.results.length > 0) {
+                    const show = data.results[0];
+                    lastSearchResult = show;
+
+                    document.getElementById('resultTitle').textContent = show.name || 'Unknown';
+                    const year = show.first_air_date ? show.first_air_date.substring(0, 4) : 'N/A';
+                    const overview = show.overview ? show.overview.substring(0, 100) + '...' : 'No description';
+                    document.getElementById('resultMeta').innerHTML = `TMDB: <span>${show.id}</span> | Year: <span>${year}</span><br><small>${overview}</small>`;
+                    document.getElementById('searchResult').classList.add('active');
+
+                    showStatus(`✅ Found: ${show.name} (TMDB: ${show.id})`, 'success');
+                } else {
+                    showStatus('❌ No results found. Try a different name or enter ID manually.', 'error');
+                    document.getElementById('searchResult').classList.remove('active');
+                }
+            } catch (e) {
+                console.error('Search error:', e);
+                showStatus('⚠️ Search failed. Enter ID manually.', 'error');
+                document.getElementById('searchResult').classList.remove('active');
+            }
+        }
+
+        function applySearchResult() {
+            if (!lastSearchResult) return;
+            document.getElementById('showId').value = lastSearchResult.id;
+            document.getElementById('idType').value = 'tmdb';
+            document.getElementById('searchResult').classList.remove('active');
+            showStatus(`✅ Applied: ${lastSearchResult.name} (TMDB: ${lastSearchResult.id})`, 'success');
+            lastSearchResult = null;
+        }
+
+        // --- Main Embed Generation ---
+        function generateEmbed() {
+            const idType = document.getElementById('idType').value;
+            let showId = document.getElementById('showId').value.trim();
+            const season = parseInt(document.getElementById('season').value) || 1;
+            const episode = parseInt(document.getElementById('episode').value) || 1;
+
+            // Validation
+            if (!showId) {
+                showStatus('❌ Please enter a TMDB or IMDB ID', 'error');
+                return;
+            }
+
+            // Auto-detect IMDB format
+            if (showId.match(/^tt\d+/i)) {
+                document.getElementById('idType').value = 'imdb';
+            }
+
+            const finalIdType = document.getElementById('idType').value;
+            const version = currentVersion;
+
+            showStatus(`⏳ Loading S${season}E${episode} (${version.toUpperCase()})...`, 'info');
+
+            // Try each mirror until one works
+            tryLoadMirror(finalIdType, showId, season, episode, version, 0);
+        }
+
+        function tryLoadMirror(idType, showId, season, episode, version, attempt) {
+            if (attempt >= VIDSRC_MIRRORS.length) {
+                showStatus('❌ All mirrors failed. Try a different ID or check back later.', 'error');
+                return;
+            }
+
+            currentMirrorIndex = attempt;
+            const mirror = VIDSRC_MIRRORS[attempt];
+
+            // Build params
+            const params = new URLSearchParams();
+            params.set(idType, showId);
+            params.set('season', season);
+            params.set('episode', episode);
+            // For mobile: disable autoplay initially (user gesture required on Android)
+            // We'll trigger play manually
+            params.set('autonext', '1');
+
+            // Language hint
+            if (version === 'dub') {
+                params.set('ds_lang', 'en');
+            } else {
+                params.set('ds_lang', 'ja');
+            }
+
+            const url = `${mirror.url}?${params.toString()}`;
+            lastGeneratedUrl = url;
+
+            // Load the iframe
+            const player = document.getElementById('player');
+            const wrapper = document.getElementById('player-wrapper');
+
+            // Set iframe with proper mobile attributes
+            player.src = url;
+
+            // Show player
+            wrapper.style.display = 'block';
+
+            // Update mirror info
+            document.getElementById('mirrorLabel').textContent = `${attempt + 1}/${VIDSRC_MIRRORS.length}`;
+            document.getElementById('mirrorDomain').textContent = mirror.name;
+
+            // Status
+            showStatus(
+                `▶️ S${season}E${episode} ${version.toUpperCase()} on ${mirror.name}`,
+                'success'
+            );
+
+            // Attempt autoplay via postMessage for supported providers
+            setTimeout(() => {
+                try {
+                    player.contentWindow.postMessage({ type: 'play' }, '*');
+                } catch(e) { /* silent */ }
+            }, 1500);
+
+            // If this mirror fails, user can tap "Switch Mirror"
+        }
+
+        function reloadEmbed() {
+            const player = document.getElementById('player');
+            if (player.src) {
+                const currentSrc = player.src;
+                player.src = '';
+                setTimeout(() => {
+                    player.src = currentSrc;
+                    showStatus('🔄 Reloaded', 'info');
+                }, 300);
+            }
+        }
+
+        function switchMirror() {
+            // Parse current params from last URL
+            const idType = document.getElementById('idType').value;
+            const showId = document.getElementById('showId').value.trim();
+            const season = document.getElementById('season').value;
+            const episode = document.getElementById('episode').value;
+            const version = currentVersion;
+
+            const nextMirror = (currentMirrorIndex + 1) % VIDSRC_MIRRORS.length;
+            showStatus(`⏳ Switching to mirror ${nextMirror + 1}/${VIDSRC_MIRRORS.length}...`, 'info');
+
+            tryLoadMirror(idType, showId, season, episode, version, nextMirror);
+        }
+
+        function closePlayer() {
+            const player = document.getElementById('player');
+            const wrapper = document.getElementById('player-wrapper');
+            player.src = '';
+            wrapper.style.display = 'none';
+            showStatus('🛑 Player closed', 'info');
+            setTimeout(() => {
+                const el = document.getElementById('status');
+                el.style.display = 'none';
+            }, 2000);
+        }
+
+        // --- Status Helper ---
+        function showStatus(msg, type) {
+            const el = document.getElementById('status');
+            el.textContent = msg;
+            el.className = `status-${type}`;
+            el.style.display = 'block';
+        }
+
+        // --- Quick Search on Enter ---
+        document.addEventListener('keydown', (e) => {
+            if (e.key === 'Enter') {
+                const active = document.activeElement;
+                if (active && active.id === 'animeName') {
+                    e.preventDefault();
+                    searchAnime();
+                } else if (active && (active.id === 'showId' || active.id === 'season' || active.id === 'episode')) {
+                    e.preventDefault();
+                    generateEmbed();
+                }
+            }
+        });
+
+        // --- Auto-submit on mobile after ID paste ---
+        document.getElementById('showId').addEventListener('blur', function() {
+            const val = this.value.trim();
+            if (val && val.match(/^tt\d+/i)) {
+                document.getElementById('idType').value = 'imdb';
+            }
+        });
+
+        // --- Handle Android back button ---
+        window.addEventListener('popstate', function(e) {
+            const wrapper = document.getElementById('player-wrapper');
+            if (wrapper.style.display !== 'none') {
+                closePlayer();
+                e.preventDefault();
+            }
+        });
+
+        // --- Prevent iframe from stealing touch gestures ---
+        document.getElementById('player').addEventListener('touchstart', function(e) {
+            // Allow touch events to pass through
+        }, { passive: true });
+
+        // --- Initialize with default search ---
+        document.addEventListener('DOMContentLoaded', function() {
+            // Auto-search "One Piece" on load
+            setTimeout(searchAnime, 500);
+        });
+
+        console.log('🍥 XAnimeX Mobile ready');
+        console.log(`📱 Viewport: ${window.innerWidth}x${window.innerHeight}`);
+    </script>
+</body>
+</html>
