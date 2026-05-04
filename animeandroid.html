@@ -169,7 +169,7 @@
             flex-wrap: wrap;
             gap: 10px;
         }
-        .player-title { font-size: 16px; font-weight: 600; max-width: 60%; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+        .player-title { font-size: 16px; font-weight: 600; }
         .player-controls { display: flex; gap: 8px; flex-wrap: wrap; }
         .player-btn {
             padding: 8px 16px;
@@ -206,29 +206,27 @@
         .episodes-panel {
             width: 100%;
             max-width: 1000px;
-            max-height: 160px;
+            max-height: 220px;
             overflow-y: auto;
             background: #111;
             border-radius: 0 0 12px 12px;
-            padding: 10px 14px;
+            padding: 12px 16px;
             display: flex;
             flex-wrap: wrap;
-            gap: 5px;
+            gap: 6px;
             margin-top: 2px;
         }
         .ep-btn {
-            padding: 5px 10px;
+            padding: 6px 12px;
             border: 1px solid #333;
             border-radius: 4px;
             background: #1e1e1e;
             color: #aaa;
-            font-size: 11px;
+            font-size: 12px;
             cursor: pointer;
             -webkit-tap-highlight-color: transparent;
             touch-action: manipulation;
             transition: 0.2s;
-            min-width: 32px;
-            text-align: center;
         }
         .ep-btn.active-ep { background: #ee5a24; border-color: #ee5a24; color: #fff; }
         .ep-btn:hover { background: #2a2a2a; }
@@ -282,10 +280,12 @@
         .page-btn:hover { background: #2a2a2a; }
         .page-btn:disabled { opacity: 0.4; cursor: not-allowed; }
 
-        .ep-count-badge {
+        .ep-scroll-hint {
+            width: 100%;
+            text-align: center;
+            padding: 4px 0;
             font-size: 11px;
-            color: #666;
-            padding: 4px 10px 4px 0;
+            color: #555;
         }
 
         @media (max-width: 600px) {
@@ -296,8 +296,7 @@
             .grid { grid-template-columns: repeat(auto-fill, minmax(140px, 1fr)); gap: 12px; }
             .card-info h3 { font-size: 13px; }
             .player-header { padding: 12px 14px; }
-            .player-title { max-width: 50%; font-size: 14px; }
-            .episodes-panel { max-height: 120px; }
+            .episodes-panel { max-height: 160px; }
         }
     </style>
 </head>
@@ -344,7 +343,9 @@
         </div>
         <iframe id="playerFrame" src="" allowfullscreen allow="autoplay; encrypted-media"></iframe>
     </div>
-    <div class="episodes-panel" id="episodeList"></div>
+    <div class="episodes-panel" id="episodeList">
+        <div class="ep-scroll-hint">Scroll for more episodes →</div>
+    </div>
 </div>
 
 <script>
@@ -354,7 +355,8 @@
 const CONFIG = {
     dropfileKey: 'df_cb4e1864e829662d929749da12b8bf20',
     dropfileBase: 'https://dropfile.cc',
-    jikanBase: 'https://api.jikan.moe/v4'
+    jikanBase: 'https://api.jikan.moe/v4',
+    MAX_EPISODE_BUTTONS: 2000
 };
 
 // =============================================
@@ -366,7 +368,6 @@ const STATE = {
     currentIdType: 'mal',
     currentAnimeTitle: '',
     currentEpisode: 1,
-    totalEpisodes: 0,
     currentLang: 'sub',
     loading: false,
     searchResults: [],
@@ -404,46 +405,6 @@ const API = {
         if (!res.ok) throw new Error(`Jikan ${res.status}`);
         const data = await res.json();
         return data.data;
-    },
-
-    /**
-     * Fetch actual aired episode list from Jikan.
-     * This is the key fix: Jikan's /episodes endpoint returns only
-     * episodes that have actually aired, even for ongoing series.
-     * It returns paginated results, so we fetch all pages.
-     */
-    async getJikanAiredEpisodes(id) {
-        let allEpisodes = [];
-        let page = 1;
-        let hasMore = true;
-
-        while (hasMore) {
-            const res = await fetch(`${CONFIG.jikanBase}/anime/${id}/episodes?page=${page}`);
-            if (!res.ok) throw new Error(`Jikan episodes ${res.status}`);
-            const data = await res.json();
-
-            if (data.data && data.data.length > 0) {
-                allEpisodes = allEpisodes.concat(data.data);
-                const totalPages = data.pagination?.last_visible_page || 1;
-                hasMore = page < totalPages;
-                page++;
-            } else {
-                hasMore = false;
-            }
-
-            // Rate limit: Jikan allows ~1 request per second
-            if (hasMore) await new Promise(r => setTimeout(r, 400));
-        }
-
-        return allEpisodes;
-    },
-
-    async dropfileApi(endpoint) {
-        const res = await fetch(`${CONFIG.dropfileBase}${endpoint}`, {
-            headers: { 'X-API-Key': CONFIG.dropfileKey }
-        });
-        if (!res.ok) throw new Error(`DropFile ${res.status}`);
-        return res.json();
     },
 
     buildPlayerUrl(idType, id, season, episode, lang) {
@@ -488,40 +449,38 @@ function renderSearchResults(results, query) {
         return;
     }
 
-    const totalPages = Math.ceil(STATE.searchTotal / 24);
-    const hasMore = STATE.searchPage < totalPages;
+    const hasMore = STATE.searchTotal > STATE.searchPage * 24;
 
     contentEl.innerHTML = `
         <div class="grid">${results.map(a => `
             <div class="card"
                  data-mal="${a.mal_id}"
-                 data-title="${a.title.replace(/"/g, '&quot;')}"
-                 data-episodes="${a.episodes || ''}"
-                 data-airing="${a.airing || false}">
+                 data-title="${(a.title || '').replace(/"/g, '&quot;')}">
                 <img src="${a.images?.jpg?.image_url || ''}" alt="${a.title}" loading="lazy" />
                 <div class="card-info">
                     <h3>${a.title}</h3>
-                    <span>${a.year || ''} · ${a.type || ''} · ${a.episodes ? a.episodes + ' eps' : 'Airing'} · ${a.score || '?'}</span>
+                    <span>${a.year || ''} · ${a.type || ''} · ${a.episodes || '?'} eps · ${a.score || '?'}</span>
                 </div>
             </div>
         `).join('')}</div>
+        ${hasMore ? `
         <div class="pagination">
-            ${STATE.searchPage > 1 ? `<button class="page-btn" id="prevPage">← Previous</button>` : `<button class="page-btn" disabled>← Previous</button>`}
-            <span style="padding:10px;color:#666;">Page ${STATE.searchPage} / ${totalPages}</span>
-            ${hasMore ? `<button class="page-btn" id="nextPage">Next →</button>` : `<button class="page-btn" disabled>Next →</button>`}
-        </div>
+            ${STATE.searchPage > 1 ? `<button class="page-btn" id="prevPage">← Previous</button>` : ''}
+            <span style="padding:10px;color:#666;">Page ${STATE.searchPage}</span>
+            <button class="page-btn" id="nextPage">Next →</button>
+        </div>` : ''}
     `;
 
     const prev = document.getElementById('prevPage');
     const next = document.getElementById('nextPage');
-    if (prev && !prev.disabled) prev.addEventListener('click', () => doSearch(lastQuery, STATE.searchPage - 1));
-    if (next && !next.disabled) next.addEventListener('click', () => doSearch(lastQuery, STATE.searchPage + 1));
+    if (prev) prev.addEventListener('click', () => doSearch(lastQuery, STATE.searchPage - 1));
+    if (next) next.addEventListener('click', () => doSearch(lastQuery, STATE.searchPage + 1));
 }
 
 // =============================================
-// OPEN PLAYER — fetches REAL episode count from Jikan
+// OPEN PLAYER
 // =============================================
-async function openPlayer(malId, title, estimatedEpisodes, isAiring) {
+async function openPlayer(malId, title) {
     if (!malId) {
         statusEl.textContent = 'No MAL ID available.';
         return;
@@ -532,57 +491,23 @@ async function openPlayer(malId, title, estimatedEpisodes, isAiring) {
     STATE.currentAnimeTitle = title;
     STATE.currentEpisode = 1;
 
-    // Show loading state in player
     playerOverlay.classList.add('active');
-    playerTitle.textContent = `${title} - Loading episodes...`;
-    episodeListEl.innerHTML = '<span style="color:#888;padding:8px;font-size:13px;">Fetching episode list...</span>';
-
-    try {
-        // Fetch the actual aired episodes from Jikan
-        // This works for both finished and airing shows
-        const airedEpisodes = await API.getJikanAiredEpisodes(malId);
-
-        if (airedEpisodes.length > 0) {
-            STATE.totalEpisodes = airedEpisodes.length;
-        } else {
-            // No episodes returned from API — use the estimated count or a default
-            // For airing shows with null episodes, this handles it
-            STATE.totalEpisodes = estimatedEpisodes || 1;
-        }
-
-        // Build episode buttons with actual numbers
-        renderEpisodeButtons(STATE.totalEpisodes);
-
-        // Load episode 1
-        loadEpisode(1);
-        playerTitle.textContent = `${title} — ${STATE.totalEpisodes} episodes`;
-        statusEl.textContent = '';
-
-    } catch (err) {
-        // Fallback if episode fetch fails
-        console.warn('Episode fetch failed, using estimated count:', err.message);
-        STATE.totalEpisodes = estimatedEpisodes || 12;
-        renderEpisodeButtons(STATE.totalEpisodes);
-        loadEpisode(1);
-        playerTitle.textContent = `${title} — ~${STATE.totalEpisodes} eps`;
-        statusEl.textContent = '';
-    }
+    // Always show ALL episode buttons up to MAX_EPISODE_BUTTONS
+    renderEpisodeButtons(CONFIG.MAX_EPISODE_BUTTONS);
+    loadEpisode(1);
+    playerTitle.textContent = title;
 }
 
-// =============================================
-// OPEN PLAYER via AniList ID
-// =============================================
-async function openPlayerAnilist(anilistId, title, episodeCount) {
+async function openPlayerAnilist(anilistId, title) {
     STATE.currentId = anilistId;
     STATE.currentIdType = 'anilist';
     STATE.currentAnimeTitle = title;
     STATE.currentEpisode = 1;
-    STATE.totalEpisodes = episodeCount || 12;
 
     playerOverlay.classList.add('active');
-    renderEpisodeButtons(STATE.totalEpisodes);
+    renderEpisodeButtons(CONFIG.MAX_EPISODE_BUTTONS);
     loadEpisode(1);
-    playerTitle.textContent = `${title} — ${STATE.totalEpisodes} eps`;
+    playerTitle.textContent = title;
 }
 
 // =============================================
@@ -593,37 +518,24 @@ function loadEpisode(episodeNum) {
     const url = API.buildPlayerUrl(
         STATE.currentIdType,
         STATE.currentId,
-        1,
+        1, // season
         episodeNum,
         STATE.currentLang
     );
     playerFrame.src = url;
-    playerTitle.textContent = `${STATE.currentAnimeTitle} — Episode ${episodeNum}`;
+    playerTitle.textContent = `${STATE.currentAnimeTitle} - Episode ${episodeNum}`;
 
+    // Highlight active button
     document.querySelectorAll('.ep-btn').forEach(btn => {
         btn.classList.toggle('active-ep', parseInt(btn.textContent) === episodeNum);
     });
-
-    // Scroll the episode button into view (for long lists like One Piece)
-    const activeBtn = document.querySelector('.ep-btn.active-ep');
-    if (activeBtn) {
-        activeBtn.scrollIntoView({ block: 'nearest', behavior: 'smooth' });
-    }
 }
 
 // =============================================
-// RENDER EPISODE BUTTONS
+// RENDER EPISODE BUTTONS — always 2000!
 // =============================================
 function renderEpisodeButtons(count) {
-    episodeListEl.innerHTML = '';
-
-    if (count === 0) {
-        episodeListEl.innerHTML = '<span style="color:#888;padding:8px;font-size:13px;">No episodes available yet.</span>';
-        return;
-    }
-
-    // No cap — render ALL buttons. The panel has overflow-y: auto and max-height,
-    // so it scrolls. For One Piece with 1160+ episodes, this works fine.
+    episodeListEl.innerHTML = '<div class="ep-scroll-hint">↓ Scroll for more episodes ↓</div>';
     for (let i = 1; i <= count; i++) {
         const btn = document.createElement('button');
         btn.className = `ep-btn${i === STATE.currentEpisode ? ' active-ep' : ''}`;
@@ -657,8 +569,7 @@ async function directLoad(input) {
             const id = malMatch[1];
             statusEl.textContent = `Loading MAL ID ${id}...`;
             const anime = await API.getJikanById(id);
-            // Pass airing status and episodes
-            await openPlayer(anime.mal_id, anime.title, anime.episodes, anime.airing);
+            openPlayer(anime.mal_id, anime.title);
             statusEl.textContent = '';
             return;
         }
@@ -734,6 +645,7 @@ function bindEvents() {
         }
     });
 
+    // Language toggles
     ['Sub', 'Dub', 'Raw'].forEach(lang => {
         const btn = $(`lang${lang}`);
         if (!btn) return;
@@ -747,22 +659,20 @@ function bindEvents() {
         });
     });
 
-    // Card clicks via event delegation
+    // Card clicks (event delegation)
     contentEl.addEventListener('click', function(e) {
         const card = e.target.closest('.card');
         if (!card || e.target.closest('.page-btn')) return;
 
         const malId = card.dataset.mal;
         const title = card.dataset.title;
-        const episodes = card.dataset.episodes ? parseInt(card.dataset.episodes) : null;
-        const isAiring = card.dataset.airing === 'true';
 
         if (malId) {
-            openPlayer(parseInt(malId), title, episodes, isAiring);
+            openPlayer(parseInt(malId), title);
         }
     });
 
-    // Episode button clicks via event delegation
+    // Episode button clicks (event delegation)
     episodeListEl.addEventListener('click', function(e) {
         const btn = e.target.closest('.ep-btn');
         if (!btn) return;
