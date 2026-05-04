@@ -2,477 +2,779 @@
 <html lang="en">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
     <title>XAnimeX</title>
     <style>
-        * {
-            -webkit-tap-highlight-color: transparent;
-            box-sizing: border-box;
-        }
-        html, body {
-            margin: 0;
-            padding: 0;
-            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
-            background: #0a0a0a;
-            color: #00ff00;
-            width: 100%;
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body {
+            font-family: 'Segoe UI', system-ui, -apple-system, sans-serif;
+            background: #0d0d0d;
+            color: #e0e0e0;
             min-height: 100vh;
         }
-        body { padding: 12px; }
-        .container { max-width: 600px; margin: 0 auto; width: 100%; }
-        h1 { text-align: center; color: #fff; text-shadow: 0 0 10px #00ff00; font-size: 22px; margin: 8px 0; }
-        .sub { text-align: center; color: #666; font-size: 13px; margin: 0 0 14px 0; }
-        
-        .card {
-            background: #111;
-            border: 1px solid #222;
-            border-radius: 10px;
-            padding: 14px;
-            margin-bottom: 10px;
-        }
-        .card label {
-            display: block;
-            font-size: 12px;
-            color: #888;
-            margin-bottom: 6px;
-        }
-        
-        input, select {
-            width: 100%;
-            padding: 14px;
-            font-size: 16px;
-            background: #1a1a1a;
-            border: 1px solid #333;
-            border-radius: 8px;
-            color: #00ff00;
-            outline: none;
-        }
-        input:focus, select:focus {
-            border-color: #00ff00;
-        }
-        
-        /* CRITICAL: touch-action forces immediate touch response */
-        .btn {
-            display: inline-flex;
+        ::-webkit-scrollbar { width: 8px; }
+        ::-webkit-scrollbar-track { background: #1a1a1a; }
+        ::-webkit-scrollbar-thumb { background: #333; border-radius: 4px; }
+
+        .header {
+            background: #141414;
+            border-bottom: 1px solid #2a2a2a;
+            padding: 16px 24px;
+            display: flex;
             align-items: center;
-            justify-content: center;
-            width: 100%;
-            padding: 15px 12px;
-            font-size: 16px;
-            font-weight: 600;
-            border: none;
-            border-radius: 8px;
-            cursor: pointer;
-            -webkit-appearance: none;
-            appearance: none;
-            touch-action: manipulation;
-            user-select: none;
-            -webkit-user-select: none;
-            min-height: 48px;
+            justify-content: space-between;
+            flex-wrap: wrap;
+            gap: 12px;
+            position: sticky;
+            top: 0;
+            z-index: 100;
         }
-        
-        .btn-primary {
-            background: #00ff00;
-            color: #000;
+        .logo {
+            font-size: 24px;
+            font-weight: 800;
+            background: linear-gradient(135deg, #ff6b6b, #ee5a24);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
         }
-        .btn-secondary {
-            background: #1a1a1a;
-            color: #888;
+        .nav-btns { display: flex; gap: 8px; flex-wrap: wrap; }
+        .nav-btn {
+            padding: 10px 20px;
             border: 1px solid #333;
-        }
-        .btn-secondary.active {
-            background: #00ff00;
-            color: #000;
-            border-color: #00ff00;
-        }
-        .btn-danger {
-            background: #330000;
-            color: #ff4444;
-            border: 1px solid #550000;
-        }
-        .btn-sm {
-            padding: 10px;
-            font-size: 13px;
-            min-height: 40px;
-            width: auto;
-            flex: 1;
-        }
-        
-        .row {
-            display: flex;
-            gap: 8px;
-        }
-        .row > * { flex: 1; }
-        
-        .search-wrap {
-            display: flex;
-            gap: 8px;
-        }
-        .search-wrap input { flex: 1; }
-        .search-wrap .btn {
-            width: auto;
-            padding: 14px 18px;
-            flex: 0 0 auto;
-        }
-        
-        #status {
-            padding: 12px;
-            margin: 8px 0;
+            background: #1e1e1e;
+            color: #ccc;
             border-radius: 8px;
             font-size: 14px;
-            text-align: center;
-            display: none;
+            font-weight: 600;
+            cursor: pointer;
+            -webkit-tap-highlight-color: transparent;
+            touch-action: manipulation;
+            transition: 0.2s;
         }
-        .s-success { display: block !important; background: #004400; color: #00ff00; }
-        .s-error { display: block !important; background: #440000; color: #ff4444; }
-        .s-info { display: block !important; background: #003344; color: #00ccff; }
-        
-        #searchResult {
-            display: none;
-            background: #0d1a0d;
-            border: 1px solid #004400;
-            border-radius: 8px;
-            padding: 12px;
-            margin-top: 8px;
+        .nav-btn.active {
+            background: #ee5a24;
+            border-color: #ee5a24;
+            color: #fff;
         }
-        #searchResult.show { display: block; }
-        #searchResult .title { color: #fff; font-size: 15px; font-weight: bold; }
-        #searchResult .meta { color: #888; font-size: 12px; margin-top: 4px; }
-        #searchResult .meta span { color: #00ff00; }
-        
-        #playerWrap {
-            display: none;
-            margin-top: 10px;
-            border-radius: 10px;
-            overflow: hidden;
-            background: #000;
+        .nav-btn:hover { background: #2a2a2a; }
+
+        .search-section {
+            padding: 20px 24px;
+            display: flex;
+            gap: 10px;
+            flex-wrap: wrap;
+        }
+        .search-section input {
+            flex: 1;
+            min-width: 200px;
+            padding: 12px 16px;
             border: 1px solid #333;
+            border-radius: 8px;
+            background: #1e1e1e;
+            color: #e0e0e0;
+            font-size: 15px;
+            outline: none;
         }
-        #player {
-            width: 100%;
-            height: 240px;
+        .search-section input:focus { border-color: #ee5a24; }
+        .search-section button {
+            padding: 12px 24px;
+            background: #ee5a24;
+            color: #fff;
             border: none;
-            background: #000;
+            border-radius: 8px;
+            font-size: 15px;
+            font-weight: 600;
+            cursor: pointer;
+            -webkit-tap-highlight-color: transparent;
+            touch-action: manipulation;
+        }
+
+        .content {
+            padding: 0 24px 24px;
+            max-width: 1600px;
+            margin: 0 auto;
+        }
+        .grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
+            gap: 20px;
+        }
+        .card {
+            background: #1a1a1a;
+            border-radius: 12px;
+            overflow: hidden;
+            cursor: pointer;
+            -webkit-tap-highlight-color: transparent;
+            touch-action: manipulation;
+            transition: transform 0.2s;
+        }
+        .card:active { transform: scale(0.97); }
+        .card img {
+            width: 100%;
+            aspect-ratio: 3/4;
+            object-fit: cover;
             display: block;
         }
-        @media (min-width: 600px) { #player { height: 400px; } }
-        
-        .p-controls {
+        .card-info {
+            padding: 12px;
             display: flex;
-            gap: 6px;
-            padding: 8px;
+            flex-direction: column;
+            gap: 4px;
+        }
+        .card-info h3 {
+            font-size: 14px;
+            font-weight: 600;
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+        }
+        .card-info span {
+            font-size: 12px;
+            color: #888;
+        }
+
+        /* Player Overlay */
+        .overlay {
+            display: none;
+            position: fixed;
+            top: 0; left: 0;
+            width: 100%; height: 100%;
+            background: rgba(0,0,0,0.9);
+            z-index: 1000;
+            justify-content: center;
+            align-items: center;
+            flex-direction: column;
+            padding: 20px;
+        }
+        .overlay.active { display: flex; }
+        .player-container {
+            width: 100%;
+            max-width: 1000px;
+            background: #000;
+            border-radius: 12px;
+            overflow: hidden;
+        }
+        .player-container iframe {
+            width: 100%;
+            aspect-ratio: 16/9;
+            border: none;
+            display: block;
+        }
+        .player-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 16px 20px;
             background: #111;
-            border-top: 1px solid #222;
+            flex-wrap: wrap;
+            gap: 10px;
         }
-        .p-info {
-            text-align: center;
-            font-size: 11px;
-            color: #555;
-            padding: 6px;
-            background: #0d0d0d;
+        .player-title { font-size: 16px; font-weight: 600; max-width: 60%; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+        .player-controls { display: flex; gap: 8px; flex-wrap: wrap; }
+        .player-btn {
+            padding: 8px 16px;
+            border-radius: 6px;
+            border: 1px solid #333;
+            background: #1e1e1e;
+            color: #ccc;
+            font-size: 13px;
+            font-weight: 600;
+            cursor: pointer;
+            -webkit-tap-highlight-color: transparent;
+            touch-action: manipulation;
+            transition: 0.2s;
         }
-        .p-info span { color: #00ff00; }
-        
-        .id-row {
+        .player-btn.active-lang {
+            background: #ee5a24;
+            border-color: #ee5a24;
+            color: #fff;
+        }
+        .player-btn:hover { background: #2a2a2a; }
+        .close-btn {
+            padding: 8px 16px;
+            background: #c0392b;
+            color: #fff;
+            border: none;
+            border-radius: 6px;
+            font-size: 13px;
+            font-weight: 600;
+            cursor: pointer;
+            -webkit-tap-highlight-color: transparent;
+            touch-action: manipulation;
+        }
+
+        .episodes-panel {
+            width: 100%;
+            max-width: 1000px;
+            max-height: 160px;
+            overflow-y: auto;
+            background: #111;
+            border-radius: 0 0 12px 12px;
+            padding: 10px 14px;
             display: flex;
-            gap: 8px;
+            flex-wrap: wrap;
+            gap: 5px;
+            margin-top: 2px;
         }
-        .id-row select { flex: 0 0 80px; }
-        .id-row input { flex: 1; }
-        
-        .mt-8 { margin-top: 8px; }
-        .footer {
-            text-align: center;
-            color: #333;
+        .ep-btn {
+            padding: 5px 10px;
+            border: 1px solid #333;
+            border-radius: 4px;
+            background: #1e1e1e;
+            color: #aaa;
             font-size: 11px;
-            margin-top: 20px;
-            padding: 10px;
+            cursor: pointer;
+            -webkit-tap-highlight-color: transparent;
+            touch-action: manipulation;
+            transition: 0.2s;
+            min-width: 32px;
+            text-align: center;
+        }
+        .ep-btn.active-ep { background: #ee5a24; border-color: #ee5a24; color: #fff; }
+        .ep-btn:hover { background: #2a2a2a; }
+
+        .status {
+            padding: 12px 24px;
+            color: #888;
+            font-size: 14px;
+        }
+        .loader {
+            text-align: center;
+            padding: 40px;
+            color: #666;
+        }
+        .loader::after {
+            content: '';
+            display: inline-block;
+            width: 24px; height: 24px;
+            border: 3px solid #333;
+            border-top-color: #ee5a24;
+            border-radius: 50%;
+            animation: spin 0.8s linear infinite;
+            margin-left: 10px;
+        }
+        @keyframes spin { to { transform: rotate(360deg); } }
+        .error-msg {
+            text-align: center;
+            padding: 40px;
+            color: #e74c3c;
+        }
+        .pagination {
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            gap: 12px;
+            padding: 20px 0;
+        }
+        .page-btn {
+            padding: 10px 20px;
+            border: 1px solid #333;
+            border-radius: 8px;
+            background: #1e1e1e;
+            color: #ccc;
+            font-size: 14px;
+            font-weight: 600;
+            cursor: pointer;
+            -webkit-tap-highlight-color: transparent;
+            touch-action: manipulation;
+            transition: 0.2s;
+        }
+        .page-btn:hover { background: #2a2a2a; }
+        .page-btn:disabled { opacity: 0.4; cursor: not-allowed; }
+
+        .ep-count-badge {
+            font-size: 11px;
+            color: #666;
+            padding: 4px 10px 4px 0;
+        }
+
+        @media (max-width: 600px) {
+            .header { padding: 12px 16px; }
+            .logo { font-size: 20px; }
+            .search-section { padding: 12px 16px; }
+            .content { padding: 0 12px 16px; }
+            .grid { grid-template-columns: repeat(auto-fill, minmax(140px, 1fr)); gap: 12px; }
+            .card-info h3 { font-size: 13px; }
+            .player-header { padding: 12px 14px; }
+            .player-title { max-width: 50%; font-size: 14px; }
+            .episodes-panel { max-height: 120px; }
         }
     </style>
 </head>
 <body>
-    <div class="container">
-        <h1>🍥 XAnimeX</h1>
-        <p class="sub">TMDB → Embed → Stream</p>
 
-        <!-- Step 1: Search -->
-        <div class="card">
-            <label>1. Search Anime (TMDB)</label>
-            <div class="search-wrap">
-                <input type="text" id="animeName" placeholder="e.g. One Piece, AOT" value="One Piece">
-                <button class="btn btn-secondary" id="btnSearch" style="font-size:18px;">🔍</button>
-            </div>
-            <div id="searchResult">
-                <div class="title" id="resultTitle"></div>
-                <div class="meta" id="resultMeta"></div>
-                <button class="btn btn-primary" id="btnApplyResult">✅ Use This</button>
-            </div>
-            <div id="searchStatus" style="margin-top:6px;font-size:12px;color:#666;"></div>
-        </div>
-
-        <!-- Step 2: ID -->
-        <div class="card">
-            <label>2. ID</label>
-            <div class="id-row">
-                <select id="idType">
-                    <option value="tmdb">TMDB</option>
-                    <option value="imdb">IMDB</option>
-                </select>
-                <input type="text" id="showId" placeholder="e.g. 1399 or tt0944947">
-            </div>
-        </div>
-
-        <!-- Step 3: Season + Episode -->
-        <div class="card">
-            <label>3. Season &amp; Episode</label>
-            <div class="row">
-                <div>
-                    <label style="font-size:11px;color:#666;margin-bottom:4px;display:block;">Season</label>
-                    <input type="number" id="season" min="1" value="1">
-                </div>
-                <div>
-                    <label style="font-size:11px;color:#666;margin-bottom:4px;display:block;">Episode</label>
-                    <input type="number" id="episode" min="1" value="1">
-                </div>
-            </div>
-        </div>
-
-        <!-- Step 4: Version -->
-        <div class="card">
-            <label>4. Audio</label>
-            <div class="row" id="versionGroup">
-                <button class="btn btn-primary active" id="btnSub">SUB</button>
-                <button class="btn btn-secondary" id="btnDub">DUB</button>
-            </div>
-        </div>
-
-        <!-- Generate -->
-        <button class="btn btn-primary" id="btnGenerate">🔥 Generate &amp; Play</button>
-
-        <!-- Status -->
-        <div id="status"></div>
-
-        <!-- Player -->
-        <div id="playerWrap">
-            <iframe id="player" allow="accelerometer; autoplay; encrypted-media; gyroscope; picture-in-picture" allowfullscreen referrerpolicy="origin"></iframe>
-            <div class="p-info">Mirror: <span id="mirrorLabel">1/4</span> · <span id="mirrorName">vidsrc-embed.su</span></div>
-            <div class="p-controls">
-                <button class="btn btn-secondary btn-sm" id="btnReload">🔄 Reload</button>
-                <button class="btn btn-secondary btn-sm" id="btnSwitch">🔀 Switch</button>
-                <button class="btn btn-danger btn-sm" id="btnClose">✕ Close</button>
-            </div>
-        </div>
-
-        <div class="footer">XAnimeX v2.1 • Mobile</div>
+<div class="header">
+    <div class="logo">XAnimeX</div>
+    <div class="nav-btns" id="navBtns">
+        <button class="nav-btn active" data-mode="search">Search</button>
+        <button class="nav-btn" data-mode="direct">Direct</button>
     </div>
+</div>
 
-    <script>
-        (function() {
-            'use strict';
+<div id="searchSection" class="search-section">
+    <input type="text" id="searchInput" placeholder="Search anime titles..." />
+    <button id="searchBtn">Search</button>
+</div>
 
-            // === CONFIG ===
-            var TMDB_KEY = '3fd2be6f0c70a2a598f084ddfb75487c';
-            var MIRRORS = [
-                { name: 'vidsrc-embed.su', url: 'https://vidsrc-embed.su/embed/tv' },
-                { name: 'vidsrc-embed.ru',       url: 'https://vidsrc-embed.ru/embed/tv' },
-                { name: 'vidsrcme.ru',     url: 'https://vidsrcme.ru/embed/tv' },
-                { name: 'vidsrc.fm',       url: 'https://vidsrc.fm/embed/tv' },
-                { name: 'vidsrc.icu',      url: 'https://vidsrc.icu/embed/tv' }
-            ];
+<div id="directSection" class="search-section" style="display:none;">
+    <input type="text" id="directInput" placeholder="MAL ID (e.g. 21) or AniList ID (e.g. anilist-154587)..." />
+    <button id="directBtn">Load</button>
+</div>
 
-            var currentMirror = 0;
-            var currentVersion = 'sub';
-            var lastSearchData = null;
+<div id="status" class="status">Search for an anime to get started.</div>
+<div id="content" class="content">
+    <div class="status" style="text-align:center;padding:60px 20px;color:#555;">
+        <p style="font-size:18px;margin-bottom:8px;">Welcome to XAnimeX</p>
+        <p style="font-size:14px;">Search for any anime title using the Search bar above,</p>
+        <p style="font-size:14px;">or use Direct mode with a MAL/AniList ID.</p>
+    </div>
+</div>
 
-            // === DOM ===
-            var $ = function(id) { return document.getElementById(id); };
-            var animeName      = $('animeName');
-            var btnSearch      = $('btnSearch');
-            var searchResult   = $('searchResult');
-            var resultTitle    = $('resultTitle');
-            var resultMeta     = $('resultMeta');
-            var btnApplyResult = $('btnApplyResult');
-            var searchStatus   = $('searchStatus');
-            var idType         = $('idType');
-            var showId         = $('showId');
-            var season         = $('season');
-            var episode        = $('episode');
-            var btnSub         = $('btnSub');
-            var btnDub         = $('btnDub');
-            var btnGenerate    = $('btnGenerate');
-            var status         = $('status');
-            var playerWrap     = $('playerWrap');
-            var player         = $('player');
-            var mirrorLabel    = $('mirrorLabel');
-            var mirrorName     = $('mirrorName');
-            var btnReload      = $('btnReload');
-            var btnSwitch      = $('btnSwitch');
-            var btnClose       = $('btnClose');
+<!-- Player Overlay -->
+<div class="overlay" id="playerOverlay">
+    <div class="player-container">
+        <div class="player-header">
+            <span class="player-title" id="playerTitle">Loading...</span>
+            <div class="player-controls">
+                <button class="player-btn active-lang" id="langSub" data-lang="sub">Sub</button>
+                <button class="player-btn" id="langDub" data-lang="dub">Dub</button>
+                <button class="player-btn" id="langRaw" data-lang="raw">Raw</button>
+                <button class="close-btn" id="closePlayer">Close</button>
+            </div>
+        </div>
+        <iframe id="playerFrame" src="" allowfullscreen allow="autoplay; encrypted-media"></iframe>
+    </div>
+    <div class="episodes-panel" id="episodeList"></div>
+</div>
 
-            // === THE FIX: bind both touchstart AND click ===
-            function tap(el, fn) {
-                if (!el) return;
-                // touchstart fires IMMEDIATELY on Android, no 300ms delay
-                el.addEventListener('touchstart', function(e) {
-                    e.preventDefault(); // prevents ghost click issues
-                    fn(e);
-                }, { passive: false });
-                // click as fallback for desktop / non-touch
-                el.addEventListener('click', function(e) {
-                    fn(e);
-                });
+<script>
+// =============================================
+// CONFIG
+// =============================================
+const CONFIG = {
+    dropfileKey: 'df_cb4e1864e829662d929749da12b8bf20',
+    dropfileBase: 'https://dropfile.cc',
+    jikanBase: 'https://api.jikan.moe/v4'
+};
+
+// =============================================
+// STATE
+// =============================================
+const STATE = {
+    mode: 'search',
+    currentId: null,
+    currentIdType: 'mal',
+    currentAnimeTitle: '',
+    currentEpisode: 1,
+    totalEpisodes: 0,
+    currentLang: 'sub',
+    loading: false,
+    searchResults: [],
+    searchPage: 1,
+    searchTotal: 0
+};
+
+// =============================================
+// DOM REFS
+// =============================================
+const $ = id => document.getElementById(id);
+const searchSection = $('searchSection');
+const directSection = $('directSection');
+const contentEl = $('content');
+const statusEl = $('status');
+const playerOverlay = $('playerOverlay');
+const playerFrame = $('playerFrame');
+const playerTitle = $('playerTitle');
+const episodeListEl = $('episodeList');
+
+// =============================================
+// API HELPERS
+// =============================================
+const API = {
+    async searchJikan(query, page = 1) {
+        const res = await fetch(
+            `${CONFIG.jikanBase}/anime?q=${encodeURIComponent(query)}&limit=24&page=${page}&sfw=true`
+        );
+        if (!res.ok) throw new Error(`Jikan ${res.status}`);
+        return res.json();
+    },
+
+    async getJikanById(id) {
+        const res = await fetch(`${CONFIG.jikanBase}/anime/${id}/full`);
+        if (!res.ok) throw new Error(`Jikan ${res.status}`);
+        const data = await res.json();
+        return data.data;
+    },
+
+    /**
+     * Fetch actual aired episode list from Jikan.
+     * This is the key fix: Jikan's /episodes endpoint returns only
+     * episodes that have actually aired, even for ongoing series.
+     * It returns paginated results, so we fetch all pages.
+     */
+    async getJikanAiredEpisodes(id) {
+        let allEpisodes = [];
+        let page = 1;
+        let hasMore = true;
+
+        while (hasMore) {
+            const res = await fetch(`${CONFIG.jikanBase}/anime/${id}/episodes?page=${page}`);
+            if (!res.ok) throw new Error(`Jikan episodes ${res.status}`);
+            const data = await res.json();
+
+            if (data.data && data.data.length > 0) {
+                allEpisodes = allEpisodes.concat(data.data);
+                const totalPages = data.pagination?.last_visible_page || 1;
+                hasMore = page < totalPages;
+                page++;
+            } else {
+                hasMore = false;
             }
 
-            // === Status ===
-            function showStatus(msg, type) {
-                status.textContent = msg;
-                status.className = 's-' + type;
-                status.style.display = 'block';
-            }
-            function hideStatus() {
-                status.style.display = 'none';
-            }
+            // Rate limit: Jikan allows ~1 request per second
+            if (hasMore) await new Promise(r => setTimeout(r, 400));
+        }
 
-            // === Search ===
-            function searchAnime() {
-                var name = animeName.value.trim();
-                if (!name) { showStatus('Enter a name', 'error'); return; }
-                showStatus('Searching...', 'info');
-                searchResult.classList.remove('show');
-                searchStatus.textContent = 'Searching...';
+        return allEpisodes;
+    },
 
-                var url = 'https://api.themoviedb.org/3/search/tv?api_key=' + TMDB_KEY + '&query=' + encodeURIComponent(name) + '&language=en-US&page=1';
-                fetch(url)
-                    .then(function(r) { return r.json(); })
-                    .then(function(data) {
-                        if (data.results && data.results.length > 0) {
-                            var show = data.results[0];
-                            lastSearchData = show;
-                            resultTitle.textContent = show.name || 'Unknown';
-                            var year = show.first_air_date ? show.first_air_date.substring(0, 4) : 'N/A';
-                            resultMeta.innerHTML = 'TMDB: <span>' + show.id + '</span> | Year: <span>' + year + '</span>';
-                            searchResult.classList.add('show');
-                            showStatus('Found: ' + show.name, 'success');
-                            searchStatus.textContent = '';
-                        } else {
-                            showStatus('No results', 'error');
-                            searchStatus.textContent = 'No matches';
-                        }
-                    })
-                    .catch(function() {
-                        showStatus('TMDB search failed. Use manual ID.', 'error');
-                        searchStatus.textContent = 'Search error';
-                    });
-            }
+    async dropfileApi(endpoint) {
+        const res = await fetch(`${CONFIG.dropfileBase}${endpoint}`, {
+            headers: { 'X-API-Key': CONFIG.dropfileKey }
+        });
+        if (!res.ok) throw new Error(`DropFile ${res.status}`);
+        return res.json();
+    },
 
-            // === Generate ===
-            function generateEmbed() {
-                var tid = idType.value;
-                var sid = showId.value.trim();
-                var s = parseInt(season.value) || 1;
-                var e = parseInt(episode.value) || 1;
-                var ver = currentVersion;
+    buildPlayerUrl(idType, id, season, episode, lang) {
+        const prefix = idType === 'anilist' ? 'anilist-' : 'mal-';
+        const audio = lang === 'raw' ? 'raw' : (lang === 'dub' ? 'dub' : 'sub');
+        return `${CONFIG.dropfileBase}/player/tv/${prefix}${id}/${season}/${episode}?audio=${audio}&lang=en`;
+    }
+};
 
-                if (!sid) { showStatus('Enter an ID', 'error'); return; }
-                if (sid.match(/^tt\d+/i)) { idType.value = 'imdb'; tid = 'imdb'; }
+// =============================================
+// SEARCH
+// =============================================
+async function doSearch(query, page = 1) {
+    if (!query.trim()) return;
+    STATE.loading = true;
+    statusEl.textContent = `Searching "${query}"...`;
+    contentEl.innerHTML = '<div class="loader">Searching</div>';
 
-                showStatus('Loading S' + s + 'E' + e + ' ' + ver.toUpperCase(), 'info');
-                loadMirror(tid, sid, s, e, ver, 0);
-            }
+    try {
+        const result = await API.searchJikan(query, page);
+        STATE.searchResults = result.data || [];
+        STATE.searchPage = page;
+        STATE.searchTotal = result.pagination?.items?.total || 0;
+        renderSearchResults(STATE.searchResults, query);
+        statusEl.textContent = `Found ${STATE.searchTotal} results for "${query}" (Page ${page})`;
+    } catch (err) {
+        statusEl.textContent = `Search error: ${err.message}`;
+        contentEl.innerHTML = `<div class="error-msg">Search failed. Try again.</div>`;
+    } finally {
+        STATE.loading = false;
+    }
+}
 
-            function loadMirror(tid, sid, s, e, ver, idx) {
-                if (idx >= MIRRORS.length) {
-                    showStatus('All mirrors failed', 'error');
-                    return;
-                }
-                currentMirror = idx;
-                var mirror = MIRRORS[idx];
-                var params = new URLSearchParams();
-                params.set(tid, sid);
-                params.set('season', s);
-                params.set('episode', e);
-                params.set('ds_lang', ver === 'dub' ? 'en' : 'ja');
-                var url = mirror.url + '?' + params.toString();
-                player.src = url;
-                playerWrap.style.display = 'block';
-                mirrorLabel.textContent = (idx + 1) + '/' + MIRRORS.length;
-                mirrorName.textContent = mirror.name;
-                showStatus('▶ ' + mirror.name, 'success');
-            }
+// =============================================
+// RENDER: Search Results
+// =============================================
+let lastQuery = '';
+function renderSearchResults(results, query) {
+    if (query) lastQuery = query;
+    if (!results || results.length === 0) {
+        contentEl.innerHTML = `<div class="error-msg">No results found.</div>`;
+        return;
+    }
 
-            // === BIND ALL BUTTONS (touchstart + click) ===
+    const totalPages = Math.ceil(STATE.searchTotal / 24);
+    const hasMore = STATE.searchPage < totalPages;
 
-            // Search
-            tap(btnSearch, function() { searchAnime(); });
+    contentEl.innerHTML = `
+        <div class="grid">${results.map(a => `
+            <div class="card"
+                 data-mal="${a.mal_id}"
+                 data-title="${a.title.replace(/"/g, '&quot;')}"
+                 data-episodes="${a.episodes || ''}"
+                 data-airing="${a.airing || false}">
+                <img src="${a.images?.jpg?.image_url || ''}" alt="${a.title}" loading="lazy" />
+                <div class="card-info">
+                    <h3>${a.title}</h3>
+                    <span>${a.year || ''} · ${a.type || ''} · ${a.episodes ? a.episodes + ' eps' : 'Airing'} · ${a.score || '?'}</span>
+                </div>
+            </div>
+        `).join('')}</div>
+        <div class="pagination">
+            ${STATE.searchPage > 1 ? `<button class="page-btn" id="prevPage">← Previous</button>` : `<button class="page-btn" disabled>← Previous</button>`}
+            <span style="padding:10px;color:#666;">Page ${STATE.searchPage} / ${totalPages}</span>
+            ${hasMore ? `<button class="page-btn" id="nextPage">Next →</button>` : `<button class="page-btn" disabled>Next →</button>`}
+        </div>
+    `;
 
-            // Apply search result
-            tap(btnApplyResult, function() {
-                if (!lastSearchData) return;
-                showId.value = lastSearchData.id;
-                idType.value = 'tmdb';
-                searchResult.classList.remove('show');
-                showStatus('Applied TMDB: ' + lastSearchData.id, 'success');
-                lastSearchData = null;
+    const prev = document.getElementById('prevPage');
+    const next = document.getElementById('nextPage');
+    if (prev && !prev.disabled) prev.addEventListener('click', () => doSearch(lastQuery, STATE.searchPage - 1));
+    if (next && !next.disabled) next.addEventListener('click', () => doSearch(lastQuery, STATE.searchPage + 1));
+}
+
+// =============================================
+// OPEN PLAYER — fetches REAL episode count from Jikan
+// =============================================
+async function openPlayer(malId, title, estimatedEpisodes, isAiring) {
+    if (!malId) {
+        statusEl.textContent = 'No MAL ID available.';
+        return;
+    }
+
+    STATE.currentId = malId;
+    STATE.currentIdType = 'mal';
+    STATE.currentAnimeTitle = title;
+    STATE.currentEpisode = 1;
+
+    // Show loading state in player
+    playerOverlay.classList.add('active');
+    playerTitle.textContent = `${title} - Loading episodes...`;
+    episodeListEl.innerHTML = '<span style="color:#888;padding:8px;font-size:13px;">Fetching episode list...</span>';
+
+    try {
+        // Fetch the actual aired episodes from Jikan
+        // This works for both finished and airing shows
+        const airedEpisodes = await API.getJikanAiredEpisodes(malId);
+
+        if (airedEpisodes.length > 0) {
+            STATE.totalEpisodes = airedEpisodes.length;
+        } else {
+            // No episodes returned from API — use the estimated count or a default
+            // For airing shows with null episodes, this handles it
+            STATE.totalEpisodes = estimatedEpisodes || 1;
+        }
+
+        // Build episode buttons with actual numbers
+        renderEpisodeButtons(STATE.totalEpisodes);
+
+        // Load episode 1
+        loadEpisode(1);
+        playerTitle.textContent = `${title} — ${STATE.totalEpisodes} episodes`;
+        statusEl.textContent = '';
+
+    } catch (err) {
+        // Fallback if episode fetch fails
+        console.warn('Episode fetch failed, using estimated count:', err.message);
+        STATE.totalEpisodes = estimatedEpisodes || 12;
+        renderEpisodeButtons(STATE.totalEpisodes);
+        loadEpisode(1);
+        playerTitle.textContent = `${title} — ~${STATE.totalEpisodes} eps`;
+        statusEl.textContent = '';
+    }
+}
+
+// =============================================
+// OPEN PLAYER via AniList ID
+// =============================================
+async function openPlayerAnilist(anilistId, title, episodeCount) {
+    STATE.currentId = anilistId;
+    STATE.currentIdType = 'anilist';
+    STATE.currentAnimeTitle = title;
+    STATE.currentEpisode = 1;
+    STATE.totalEpisodes = episodeCount || 12;
+
+    playerOverlay.classList.add('active');
+    renderEpisodeButtons(STATE.totalEpisodes);
+    loadEpisode(1);
+    playerTitle.textContent = `${title} — ${STATE.totalEpisodes} eps`;
+}
+
+// =============================================
+// LOAD EPISODE
+// =============================================
+function loadEpisode(episodeNum) {
+    STATE.currentEpisode = episodeNum;
+    const url = API.buildPlayerUrl(
+        STATE.currentIdType,
+        STATE.currentId,
+        1,
+        episodeNum,
+        STATE.currentLang
+    );
+    playerFrame.src = url;
+    playerTitle.textContent = `${STATE.currentAnimeTitle} — Episode ${episodeNum}`;
+
+    document.querySelectorAll('.ep-btn').forEach(btn => {
+        btn.classList.toggle('active-ep', parseInt(btn.textContent) === episodeNum);
+    });
+
+    // Scroll the episode button into view (for long lists like One Piece)
+    const activeBtn = document.querySelector('.ep-btn.active-ep');
+    if (activeBtn) {
+        activeBtn.scrollIntoView({ block: 'nearest', behavior: 'smooth' });
+    }
+}
+
+// =============================================
+// RENDER EPISODE BUTTONS
+// =============================================
+function renderEpisodeButtons(count) {
+    episodeListEl.innerHTML = '';
+
+    if (count === 0) {
+        episodeListEl.innerHTML = '<span style="color:#888;padding:8px;font-size:13px;">No episodes available yet.</span>';
+        return;
+    }
+
+    // No cap — render ALL buttons. The panel has overflow-y: auto and max-height,
+    // so it scrolls. For One Piece with 1160+ episodes, this works fine.
+    for (let i = 1; i <= count; i++) {
+        const btn = document.createElement('button');
+        btn.className = `ep-btn${i === STATE.currentEpisode ? ' active-ep' : ''}`;
+        btn.textContent = i;
+        episodeListEl.appendChild(btn);
+    }
+}
+
+// =============================================
+// DIRECT LOAD
+// =============================================
+async function directLoad(input) {
+    input = input.trim();
+    if (!input) return;
+
+    contentEl.innerHTML = '<div class="loader">Loading</div>';
+
+    const anilistMatch = input.match(/^(?:anilist|al)[-\s]?(\d+)$/i);
+    const malMatch = input.match(/^(?:mal[-\s]?)?(\d+)$/i);
+
+    try {
+        if (anilistMatch) {
+            const id = anilistMatch[1];
+            statusEl.textContent = `Loading AniList ID ${id}...`;
+            openPlayerAnilist(id, `Anime (AniList ${id})`);
+            statusEl.textContent = '';
+            return;
+        }
+
+        if (malMatch) {
+            const id = malMatch[1];
+            statusEl.textContent = `Loading MAL ID ${id}...`;
+            const anime = await API.getJikanById(id);
+            // Pass airing status and episodes
+            await openPlayer(anime.mal_id, anime.title, anime.episodes, anime.airing);
+            statusEl.textContent = '';
+            return;
+        }
+
+        await doSearch(input);
+    } catch (err) {
+        statusEl.textContent = `Error: ${err.message}`;
+        contentEl.innerHTML = `<div class="error-msg">Could not load "${input}". Try searching instead.</div>`;
+    }
+}
+
+// =============================================
+// MODE SWITCHING
+// =============================================
+function setMode(mode) {
+    STATE.mode = mode;
+    document.querySelectorAll('.nav-btn').forEach(btn => {
+        btn.classList.toggle('active', btn.dataset.mode === mode);
+    });
+
+    searchSection.style.display = mode === 'search' ? 'flex' : 'none';
+    directSection.style.display = mode === 'direct' ? 'flex' : 'none';
+
+    if (mode === 'search') {
+        if (STATE.searchResults.length > 0) {
+            renderSearchResults(STATE.searchResults);
+            statusEl.textContent = `${STATE.searchResults.length} results`;
+        } else {
+            contentEl.innerHTML = `<div class="status" style="text-align:center;padding:60px 20px;color:#555;">
+                <p style="font-size:18px;margin-bottom:8px;">Search MyAnimeList</p>
+                <p style="font-size:14px;">Enter a title above to find anime.</p>
+            </div>`;
+            statusEl.textContent = '';
+        }
+    } else if (mode === 'direct') {
+        contentEl.innerHTML = `<div class="status" style="text-align:center;padding:60px 20px;color:#555;">
+            <p style="font-size:18px;margin-bottom:8px;">Direct Load</p>
+            <p style="font-size:14px;">Enter a <strong>MAL ID</strong> (e.g. <code>21</code> for One Piece)</p>
+            <p style="font-size:14px;">or <strong>AniList ID</strong> (e.g. <code>anilist-154587</code>)</p>
+            <p style="font-size:14px;margin-top:12px;color:#444;">Or type any title to search.</p>
+        </div>`;
+        statusEl.textContent = '';
+    }
+}
+
+// =============================================
+// BIND EVENTS
+// =============================================
+function bindEvents() {
+    document.querySelectorAll('.nav-btn').forEach(btn => {
+        btn.addEventListener('click', () => setMode(btn.dataset.mode));
+    });
+
+    $('searchBtn').addEventListener('click', () => doSearch($('searchInput').value));
+    $('searchInput').addEventListener('keydown', e => {
+        if (e.key === 'Enter') doSearch(e.target.value);
+    });
+
+    $('directBtn').addEventListener('click', () => directLoad($('directInput').value));
+    $('directInput').addEventListener('keydown', e => {
+        if (e.key === 'Enter') directLoad(e.target.value);
+    });
+
+    $('closePlayer').addEventListener('click', () => {
+        playerOverlay.classList.remove('active');
+        playerFrame.src = '';
+    });
+
+    playerOverlay.addEventListener('click', function(e) {
+        if (e.target === this) {
+            this.classList.remove('active');
+            playerFrame.src = '';
+        }
+    });
+
+    ['Sub', 'Dub', 'Raw'].forEach(lang => {
+        const btn = $(`lang${lang}`);
+        if (!btn) return;
+        btn.addEventListener('click', () => {
+            STATE.currentLang = lang.toLowerCase();
+            document.querySelectorAll('.player-btn[data-lang]').forEach(b => {
+                b.classList.remove('active-lang');
             });
+            btn.classList.add('active-lang');
+            if (STATE.currentId) loadEpisode(STATE.currentEpisode);
+        });
+    });
 
-            // Version: SUB
-            tap(btnSub, function() {
-                currentVersion = 'sub';
-                btnSub.className = 'btn btn-primary active';
-                btnDub.className = 'btn btn-secondary';
-            });
+    // Card clicks via event delegation
+    contentEl.addEventListener('click', function(e) {
+        const card = e.target.closest('.card');
+        if (!card || e.target.closest('.page-btn')) return;
 
-            // Version: DUB
-            tap(btnDub, function() {
-                currentVersion = 'dub';
-                btnDub.className = 'btn btn-primary active';
-                btnSub.className = 'btn btn-secondary';
-            });
+        const malId = card.dataset.mal;
+        const title = card.dataset.title;
+        const episodes = card.dataset.episodes ? parseInt(card.dataset.episodes) : null;
+        const isAiring = card.dataset.airing === 'true';
 
-            // Generate
-            tap(btnGenerate, function() { generateEmbed(); });
+        if (malId) {
+            openPlayer(parseInt(malId), title, episodes, isAiring);
+        }
+    });
 
-            // Reload
-            tap(btnReload, function() {
-                var src = player.src;
-                if (!src) return;
-                player.src = '';
-                setTimeout(function() { player.src = src; }, 300);
-                showStatus('Reloaded', 'info');
-            });
+    // Episode button clicks via event delegation
+    episodeListEl.addEventListener('click', function(e) {
+        const btn = e.target.closest('.ep-btn');
+        if (!btn) return;
+        const epNum = parseInt(btn.textContent);
+        if (!isNaN(epNum)) loadEpisode(epNum);
+    });
+}
 
-            // Switch mirror
-            tap(btnSwitch, function() {
-                var tid = idType.value;
-                var sid = showId.value.trim();
-                var s = season.value;
-                var e = episode.value;
-                var ver = currentVersion;
-                var next = (currentMirror + 1) % MIRRORS.length;
-                loadMirror(tid, sid, s, e, ver, next);
-            });
-
-            // Close player
-            tap(btnClose, function() {
-                player.src = '';
-                playerWrap.style.display = 'none';
-                showStatus('Closed', 'info');
-                setTimeout(hideStatus, 1500);
-            });
-
-            // Enter key
-            document.addEventListener('keydown', function(e) {
-                if (e.key === 'Enter') {
-                    var active = document.activeElement;
-                    if (active === animeName) { e.preventDefault(); searchAnime(); }
-                    else if (active === showId || active === season || active === episode) { e.preventDefault(); generateEmbed(); }
-                }
-            });
-
-            // Auto-search
-            setTimeout(searchAnime, 500);
-
-        })();
-    </script>
+// =============================================
+// INIT
+// =============================================
+bindEvents();
+</script>
 </body>
 </html>
