@@ -1,0 +1,66 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>MAL Search</title>
+    <style>
+        body {
+            margin: 0;
+            background: #111;
+            color: white;
+            font-family: Arial;
+        }
+
+        .topbar {
+            padding: 10px;
+            background: #1a1a1a;
+            display: flex;
+            gap: 10px;
+        }
+
+        input {
+            flex: 1;
+            padding: 10px;
+            border: none;
+            border-radius: 8px;
+            background: #222;
+            color: white;
+        }
+
+        button {
+            padding: 10px 15px;
+            border: none;
+            border-radius: 8px;
+            background: orange;
+            cursor: pointer;
+        }
+
+        iframe {
+            width: 100%;
+            height: calc(100vh - 60px);
+            border: none;
+        }
+    </style>
+</head>
+<body>
+
+    <div class="topbar">
+        <input type="text" id="animeInput" placeholder="Search anime...">
+        <button onclick="searchAnime()">Search</button>
+    </div>
+
+    <iframe id="malFrame"></iframe>
+
+    <script>
+        function searchAnime() {
+            const query = document.getElementById("animeInput").value;
+
+            const url =
+                "https://myanimelist.net/anime.php?q=" +
+                encodeURIComponent(query);
+
+            document.getElementById("malFrame").src = url;
+        }
+    </script>
+
+</body>
+</html>
