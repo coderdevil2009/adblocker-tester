@@ -352,11 +352,11 @@ const CONFIG = {
 // =============================================
 const STATE = {
     mode: 'search',
-    currentId: null,       // mal-xxx or anilist-xxx format
-    currentIdType: 'mal',  // 'mal' or 'anilist'
+    currentId: null,
+    currentIdType: 'mal',
     currentAnimeTitle: '',
     currentEpisode: 1,
-    totalEpisodes: 30,     // default fallback
+    totalEpisodes: 30,
     currentLang: 'sub',
     loading: false,
     searchResults: [],
@@ -365,9 +365,10 @@ const STATE = {
 };
 
 // =============================================
-// DOM REFS
+// DOM
 // =============================================
 const $ = id => document.getElementById(id);
+
 const searchSection = $('searchSection');
 const directSection = $('directSection');
 const contentEl = $('content');
@@ -378,49 +379,62 @@ const playerTitle = $('playerTitle');
 const episodeListEl = $('episodeList');
 
 // =============================================
-// API HELPERS
+// HELPERS
+// =============================================
+function escapeHtml(text) {
+    return text
+        .replace(/&/g, "&amp;")
+        .replace(/</g, "&lt;")
+        .replace(/>/g, "&gt;");
+}
+
+// =============================================
+// API
 // =============================================
 const API = {
-    // Jikan search
+
     async searchJikan(query, page = 1) {
+
         const res = await fetch(
             `${CONFIG.jikanBase}/anime?q=${encodeURIComponent(query)}&limit=24&page=${page}&sfw=true`
         );
-        if (!res.ok) throw new Error(`Jikan ${res.status}`);
+
+        if (!res.ok) {
+            throw new Error(`Jikan ${res.status}`);
+        }
+
         return res.json();
     },
 
-    // Jikan get by ID
     async getJikanById(id) {
-        const res = await fetch(`${CONFIG.jikanBase}/anime/${id}/full`);
-        if (!res.ok) throw new Error(`Jikan ${res.status}`);
+
+        const res = await fetch(
+            `${CONFIG.jikanBase}/anime/${id}/full`
+        );
+
+        if (!res.ok) {
+            throw new Error(`Jikan ${res.status}`);
+        }
+
         const data = await res.json();
+
         return data.data;
     },
 
-    // Jikan get episodes count
-    async getJikanEpisodes(id) {
-        const res = await fetch(`${CONFIG.jikanBase}/anime/${id}/episodes`);
-        if (!res.ok) throw new Error(`Jikan ${res.status}`);
-        const data = await res.json();
-        return data.data || [];
-    },
-
-    // DropFile JSON API
-    async dropfileApi(endpoint) {
-        const res = await fetch(`${CONFIG.dropfileBase}${endpoint}`, {
-            headers: {
-                'X-API-Key': CONFIG.dropfileKey
-            }
-        });
-        if (!res.ok) throw new Error(`DropFile ${res.status}`);
-        return res.json();
-    },
-
-    // Build DropFile player URL (no key needed for iframe)
     buildPlayerUrl(idType, id, season, episode, lang) {
-        const prefix = idType === 'anilist' ? 'anilist-' : 'mal-';
-        const audio = lang === 'raw' ? 'raw' : (lang === 'dub' ? 'dub' : 'sub');
+
+        const prefix =
+            idType === 'anilist'
+                ? 'anilist-'
+                : 'mal-';
+
+        const audio =
+            lang === 'raw'
+                ? 'raw'
+                : lang === 'dub'
+                ? 'dub'
+                : 'sub';
+
         return `${CONFIG.dropfileBase}/player/tv/${prefix}${id}/${season}/${episode}?audio=${audio}&lang=en`;
     }
 };
@@ -429,74 +443,191 @@ const API = {
 // SEARCH
 // =============================================
 async function doSearch(query, page = 1) {
+
     if (!query.trim()) return;
+
     STATE.loading = true;
+
     statusEl.textContent = `Searching "${query}"...`;
-    contentEl.innerHTML = '<div class="loader">Searching</div>';
+
+    contentEl.innerHTML = `
+        <div class="loader">
+            Searching
+        </div>
+    `;
 
     try {
+
         const result = await API.searchJikan(query, page);
+
+        console.log(result);
+
         STATE.searchResults = result.data || [];
         STATE.searchPage = page;
-        STATE.searchTotal = result.pagination?.items?.total || 0;
-        renderSearchResults(STATE.searchResults, query);
-        statusEl.textContent = `Found ${STATE.searchTotal} results for "${query}" (Page ${page})`;
+        STATE.searchTotal =
+            result.pagination?.items?.total || 0;
+
+        renderSearchResults(
+            STATE.searchResults,
+            query,
+            result
+        );
+
+        statusEl.textContent =
+            `Found ${STATE.searchTotal} results`;
+
     } catch (err) {
-        statusEl.textContent = `Search error: ${err.message}`;
-        contentEl.innerHTML = `<div class="error-msg">Search failed. Try again.</div>`;
-    } finally {
-        STATE.loading = false;
+
+        console.error(err);
+
+        statusEl.textContent =
+            `Search failed`;
+
+        contentEl.innerHTML = `
+            <div class="error-msg">
+                ${err.message}
+            </div>
+        `;
     }
+
+    STATE.loading = false;
 }
 
 // =============================================
-// RENDER: Search Results
+// RENDER SEARCH
 // =============================================
 let lastQuery = '';
-function renderSearchResults(results, query) {
-    if (query) lastQuery = query;
+
+function renderSearchResults(results, query, rawJson) {
+
+    if (query) {
+        lastQuery = query;
+    }
+
     if (!results || results.length === 0) {
-        contentEl.innerHTML = `<div class="error-msg">No results found.</div>`;
+
+        contentEl.innerHTML = `
+            <div class="error-msg">
+                No results found.
+            </div>
+        `;
+
         return;
     }
 
-    const hasMore = STATE.searchTotal > STATE.searchPage * 24;
+    const hasMore =
+        STATE.searchTotal >
+        STATE.searchPage * 24;
 
     contentEl.innerHTML = `
-        <div class="grid">${results.map(a => `
-            <div class="card"
-                 data-mal="${a.mal_id}"
-                 data-anilist="${a.anilist_id || ''}"
-                 data-title="${a.title.replace(/"/g, '&quot;')}"
-                 data-episodes="${a.episodes || ''}">
-                <img src="${a.images?.jpg?.image_url || ''}" alt="${a.title}" loading="lazy" />
-                <div class="card-info">
-                    <h3>${a.title}</h3>
-                    <span>${a.year || ''} · ${a.type || ''} · ${a.episodes || '?'} eps · ${a.score || '?'}</span>
+
+        <div class="grid">
+
+            ${results.map(a => `
+
+                <div class="card"
+                    data-mal="${a.mal_id}"
+                    data-anilist="${a.mal_id}"
+                    data-title="${(a.title || '').replace(/"/g, '&quot;')}"
+                    data-episodes="${a.episodes || 0}">
+
+                    <img
+                        src="${a.images?.jpg?.large_image_url || a.images?.jpg?.image_url || ''}"
+                        alt="${a.title}"
+                        loading="lazy"
+                    />
+
+                    <div class="card-info">
+
+                        <h3>${a.title}</h3>
+
+                        <span>
+                            ${a.year || '?'} ·
+                            ${a.type || 'Anime'} ·
+                            ${a.episodes || '?'} eps ·
+                            ⭐ ${a.score || '?'}
+                        </span>
+
+                    </div>
+
                 </div>
-            </div>
-        `).join('')}</div>
-        ${hasMore ? `
+
+            `).join('')}
+
+        </div>
+
         <div class="pagination">
-            ${STATE.searchPage > 1 ? `<button class="page-btn" id="prevPage">← Previous</button>` : ''}
-            <span style="padding:10px;color:#666;">Page ${STATE.searchPage}</span>
-            <button class="page-btn" id="nextPage">Next →</button>
-        </div>` : ''}
+
+            ${STATE.searchPage > 1
+                ? `<button class="page-btn" id="prevPage">← Previous</button>`
+                : ''
+            }
+
+            <span style="padding:10px;color:#666;">
+                Page ${STATE.searchPage}
+            </span>
+
+            ${hasMore
+                ? `<button class="page-btn" id="nextPage">Next →</button>`
+                : ''
+            }
+
+        </div>
+
+        <div style="
+            margin-top:30px;
+            background:#111;
+            border-radius:12px;
+            overflow:hidden;
+            border:1px solid #222;
+        ">
+
+            <div style="
+                padding:14px 18px;
+                border-bottom:1px solid #222;
+                color:#ff8844;
+                font-weight:700;
+            ">
+                Raw API JSON
+            </div>
+
+            <pre style="
+                padding:16px;
+                overflow:auto;
+                max-height:500px;
+                font-size:12px;
+                line-height:1.5;
+                color:#8ee98e;
+                background:#0b0b0b;
+            ">${escapeHtml(JSON.stringify(rawJson, null, 2))}</pre>
+
+        </div>
     `;
 
-    // Bind pagination
-    const prev = document.getElementById('prevPage');
-    const next = document.getElementById('nextPage');
-    if (prev) prev.addEventListener('click', () => doSearch(lastQuery, STATE.searchPage - 1));
-    if (next) next.addEventListener('click', () => doSearch(lastQuery, STATE.searchPage + 1));
+    const prev = $('prevPage');
+    const next = $('nextPage');
+
+    if (prev) {
+        prev.addEventListener('click', () => {
+            doSearch(lastQuery, STATE.searchPage - 1);
+        });
+    }
+
+    if (next) {
+        next.addEventListener('click', () => {
+            doSearch(lastQuery, STATE.searchPage + 1);
+        });
+    }
 }
 
 // =============================================
-// OPEN PLAYER via DropFile
+// PLAYER
 // =============================================
 async function openPlayer(malId, title, episodeCount) {
+
     if (!malId) {
-        statusEl.textContent = 'No MAL ID available.';
+        statusEl.textContent =
+            'No MAL ID available.';
         return;
     }
 
@@ -505,66 +636,83 @@ async function openPlayer(malId, title, episodeCount) {
     STATE.currentAnimeTitle = title;
     STATE.currentEpisode = 1;
 
-    // Try to get actual episode count from Jikan
     try {
-        const anime = await API.getJikanById(malId);
-        STATE.totalEpisodes = anime.episodes || episodeCount || 30;
+
+        const anime =
+            await API.getJikanById(malId);
+
+        STATE.totalEpisodes =
+            anime.episodes ||
+            episodeCount ||
+            30;
+
     } catch {
-        STATE.totalEpisodes = episodeCount || 30;
+
+        STATE.totalEpisodes =
+            episodeCount || 30;
     }
 
     playerOverlay.classList.add('active');
-    renderEpisodeButtons(STATE.totalEpisodes);
+
+    renderEpisodeButtons(
+        STATE.totalEpisodes
+    );
+
     loadEpisode(1);
+
     playerTitle.textContent = title;
 }
 
 // =============================================
-// OPEN PLAYER via AniList ID
-// =============================================
-async function openPlayerAnilist(anilistId, title, episodeCount) {
-    STATE.currentId = anilistId;
-    STATE.currentIdType = 'anilist';
-    STATE.currentAnimeTitle = title;
-    STATE.currentEpisode = 1;
-    STATE.totalEpisodes = episodeCount || 30;
-
-    playerOverlay.classList.add('active');
-    renderEpisodeButtons(STATE.totalEpisodes);
-    loadEpisode(1);
-    playerTitle.textContent = title;
-}
-
-// =============================================
-// LOAD EPISODE
+// LOAD EP
 // =============================================
 function loadEpisode(episodeNum) {
+
     STATE.currentEpisode = episodeNum;
+
     const url = API.buildPlayerUrl(
         STATE.currentIdType,
         STATE.currentId,
-        1, // season
+        1,
         episodeNum,
         STATE.currentLang
     );
-    playerFrame.src = url;
-    playerTitle.textContent = `${STATE.currentAnimeTitle} - Episode ${episodeNum}`;
 
-    document.querySelectorAll('.ep-btn').forEach(btn => {
-        btn.classList.toggle('active-ep', parseInt(btn.textContent) === episodeNum);
-    });
+    playerFrame.src = url;
+
+    playerTitle.textContent =
+        `${STATE.currentAnimeTitle} - Episode ${episodeNum}`;
+
+    document.querySelectorAll('.ep-btn')
+        .forEach(btn => {
+
+            btn.classList.toggle(
+                'active-ep',
+                parseInt(btn.textContent) === episodeNum
+            );
+        });
 }
 
 // =============================================
-// RENDER EPISODE BUTTONS
+// EP BUTTONS
 // =============================================
 function renderEpisodeButtons(count) {
+
     episodeListEl.innerHTML = '';
-    const actualCount = Math.min(count, 999);
+
+    const actualCount =
+        Math.min(count, 999);
+
     for (let i = 1; i <= actualCount; i++) {
-        const btn = document.createElement('button');
-        btn.className = `ep-btn${i === STATE.currentEpisode ? ' active-ep' : ''}`;
+
+        const btn =
+            document.createElement('button');
+
+        btn.className =
+            `ep-btn${i === STATE.currentEpisode ? ' active-ep' : ''}`;
+
         btn.textContent = i;
+
         episodeListEl.appendChild(btn);
     }
 }
@@ -573,149 +721,198 @@ function renderEpisodeButtons(count) {
 // DIRECT LOAD
 // =============================================
 async function directLoad(input) {
+
     input = input.trim();
+
     if (!input) return;
 
-    contentEl.innerHTML = '<div class="loader">Loading</div>';
+    contentEl.innerHTML =
+        '<div class="loader">Loading</div>';
 
-    // Check for AniList ID format: "anilist-154587" or just "154587" with prefix detection
-    const anilistMatch = input.match(/^(?:anilist|al)[-\s]?(\d+)$/i);
-    const malMatch = input.match(/^(?:mal[-\s]?)?(\d+)$/i);
+    const malMatch =
+        input.match(/^(?:mal[-\s]?)?(\d+)$/i);
 
     try {
-        if (anilistMatch) {
-            const id = anilistMatch[1];
-            statusEl.textContent = `Loading AniList ID ${id}...`;
-            // We don't have a direct way to get title from AniList via our APIs,
-            // but DropFile will play it. Try Jikan search by ID to get title
-            // For now, use generic title
-            openPlayerAnilist(id, `Anime (AniList ${id})`);
-            statusEl.textContent = '';
-            return;
-        }
 
         if (malMatch) {
+
             const id = malMatch[1];
-            statusEl.textContent = `Loading MAL ID ${id}...`;
-            const anime = await API.getJikanById(id);
-            openPlayer(anime.mal_id, anime.title, anime.episodes);
+
+            statusEl.textContent =
+                `Loading MAL ID ${id}...`;
+
+            const anime =
+                await API.getJikanById(id);
+
+            openPlayer(
+                anime.mal_id,
+                anime.title,
+                anime.episodes
+            );
+
             statusEl.textContent = '';
+
             return;
         }
 
-        // Not a number — treat as search
         await doSearch(input);
+
     } catch (err) {
-        statusEl.textContent = `Error: ${err.message}`;
-        contentEl.innerHTML = `<div class="error-msg">Could not load "${input}". Try searching instead.</div>`;
+
+        statusEl.textContent =
+            `Error: ${err.message}`;
+
+        contentEl.innerHTML = `
+            <div class="error-msg">
+                Could not load "${input}"
+            </div>
+        `;
     }
 }
 
 // =============================================
-// MODE SWITCHING
+// MODE SWITCH
 // =============================================
 function setMode(mode) {
+
     STATE.mode = mode;
-    document.querySelectorAll('.nav-btn').forEach(btn => {
-        btn.classList.toggle('active', btn.dataset.mode === mode);
-    });
 
-    searchSection.style.display = mode === 'search' ? 'flex' : 'none';
-    directSection.style.display = mode === 'direct' ? 'flex' : 'none';
+    document.querySelectorAll('.nav-btn')
+        .forEach(btn => {
 
-    if (mode === 'search') {
-        if (STATE.searchResults.length > 0) {
-            renderSearchResults(STATE.searchResults);
-            statusEl.textContent = `${STATE.searchResults.length} results`;
-        } else {
-            contentEl.innerHTML = `<div class="status" style="text-align:center;padding:60px 20px;color:#555;">
-                <p style="font-size:18px;margin-bottom:8px;">Search MyAnimeList</p>
-                <p style="font-size:14px;">Enter a title above to find anime.</p>
-            </div>`;
-            statusEl.textContent = '';
-        }
-    } else if (mode === 'direct') {
-        contentEl.innerHTML = `<div class="status" style="text-align:center;padding:60px 20px;color:#555;">
-            <p style="font-size:18px;margin-bottom:8px;">Direct Load</p>
-            <p style="font-size:14px;">Enter a <strong>MAL ID</strong> (e.g. <code>21</code> for One Piece)</p>
-            <p style="font-size:14px;">or <strong>AniList ID</strong> (e.g. <code>anilist-154587</code>)</p>
-            <p style="font-size:14px;margin-top:12px;color:#444;">Or type any title to search.</p>
-        </div>`;
-        statusEl.textContent = '';
-    }
+            btn.classList.toggle(
+                'active',
+                btn.dataset.mode === mode
+            );
+        });
+
+    searchSection.style.display =
+        mode === 'search'
+            ? 'flex'
+            : 'none';
+
+    directSection.style.display =
+        mode === 'direct'
+            ? 'flex'
+            : 'none';
 }
 
 // =============================================
-// BIND EVENTS
+// EVENTS
 // =============================================
 function bindEvents() {
-    // Nav buttons
-    document.querySelectorAll('.nav-btn').forEach(btn => {
-        btn.addEventListener('click', () => setMode(btn.dataset.mode));
-    });
 
-    // Search
-    $('searchBtn').addEventListener('click', () => doSearch($('searchInput').value));
-    $('searchInput').addEventListener('keydown', e => {
-        if (e.key === 'Enter') doSearch(e.target.value);
-    });
+    document.querySelectorAll('.nav-btn')
+        .forEach(btn => {
 
-    // Direct
-    $('directBtn').addEventListener('click', () => directLoad($('directInput').value));
-    $('directInput').addEventListener('keydown', e => {
-        if (e.key === 'Enter') directLoad(e.target.value);
-    });
+            btn.addEventListener('click', () => {
+                setMode(btn.dataset.mode);
+            });
+        });
 
-    // Player controls
-    $('closePlayer').addEventListener('click', () => {
-        playerOverlay.classList.remove('active');
-        playerFrame.src = '';
-    });
+    $('searchBtn')
+        .addEventListener('click', () => {
+            doSearch($('searchInput').value);
+        });
+
+    $('searchInput')
+        .addEventListener('keydown', e => {
+
+            if (e.key === 'Enter') {
+                doSearch(e.target.value);
+            }
+        });
+
+    $('directBtn')
+        .addEventListener('click', () => {
+            directLoad($('directInput').value);
+        });
+
+    $('directInput')
+        .addEventListener('keydown', e => {
+
+            if (e.key === 'Enter') {
+                directLoad(e.target.value);
+            }
+        });
+
+    $('closePlayer')
+        .addEventListener('click', () => {
+
+            playerOverlay.classList.remove('active');
+
+            playerFrame.src = '';
+        });
 
     playerOverlay.addEventListener('click', function(e) {
+
         if (e.target === this) {
+
             this.classList.remove('active');
+
             playerFrame.src = '';
         }
     });
 
-    // Language toggles
     ['Sub', 'Dub', 'Raw'].forEach(lang => {
+
         const btn = $(`lang${lang}`);
+
         if (!btn) return;
+
         btn.addEventListener('click', () => {
-            STATE.currentLang = lang.toLowerCase();
-            document.querySelectorAll('.player-btn[data-lang]').forEach(b => {
-                b.classList.remove('active-lang');
-            });
+
+            STATE.currentLang =
+                lang.toLowerCase();
+
+            document.querySelectorAll('.player-btn[data-lang]')
+                .forEach(b => {
+                    b.classList.remove('active-lang');
+                });
+
             btn.classList.add('active-lang');
-            if (STATE.currentId) loadEpisode(STATE.currentEpisode);
+
+            if (STATE.currentId) {
+                loadEpisode(STATE.currentEpisode);
+            }
         });
     });
 
-    // Card clicks (event delegation)
     contentEl.addEventListener('click', function(e) {
-        const card = e.target.closest('.card');
-        if (!card || e.target.closest('.page-btn')) return;
+
+        const card =
+            e.target.closest('.card');
+
+        if (!card) return;
 
         const malId = card.dataset.mal;
-        const anilistId = card.dataset.anilist;
-        const title = card.dataset.title;
-        const episodes = parseInt(card.dataset.episodes) || 0;
 
-        if (malId) {
-            openPlayer(parseInt(malId), title, episodes);
-        } else if (anilistId) {
-            openPlayerAnilist(anilistId, title, episodes);
-        }
+        const title =
+            card.dataset.title;
+
+        const episodes =
+            parseInt(card.dataset.episodes) || 0;
+
+        openPlayer(
+            parseInt(malId),
+            title,
+            episodes
+        );
     });
 
-    // Episode button clicks (event delegation)
     episodeListEl.addEventListener('click', function(e) {
-        const btn = e.target.closest('.ep-btn');
+
+        const btn =
+            e.target.closest('.ep-btn');
+
         if (!btn) return;
-        const epNum = parseInt(btn.textContent);
-        if (!isNaN(epNum)) loadEpisode(epNum);
+
+        const epNum =
+            parseInt(btn.textContent);
+
+        if (!isNaN(epNum)) {
+            loadEpisode(epNum);
+        }
     });
 }
 
